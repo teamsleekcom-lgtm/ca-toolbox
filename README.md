@@ -53,8 +53,9 @@ gh repo edit --enable-pages --pages-branch main --pages-path /
 
 ## 📦 Adding Tools (Admin Guide)
 
-### New Workflow: Delegated Submissions
-Since the admin dashboard link has been removed, the workflow is:
+## 📦 Adding Tools
+
+### Workflow: Delegated Submissions
 1.  **Users** submit tools via the "Submit a Tool" button.
 2.  This opens a **GitHub Issue** with the tool details.
 3.  **You (Admin)** view these submissions in the [Issues Tab](https://github.com/teamsleekcom-lgtm/ca-toolbox/issues).
@@ -98,11 +99,7 @@ ca-toolbox/
 | Domain (github.io) | $0 |
 | **Total** | **$0/month** |
 
-## 🔒 Admin Access
 
-- The admin panel link is hidden from the public site.
-- **Workflow:** Users submit issues -> You approve/reject -> Developer updates the site.
-- All changes require repository access.
 
 ## 🛠️ Updating Tools
 
