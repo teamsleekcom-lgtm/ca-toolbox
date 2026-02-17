@@ -53,6 +53,13 @@ gh repo edit --enable-pages --pages-branch main --pages-path /
 
 ## 📦 Adding Tools (Admin Guide)
 
+### New Workflow: Delegated Submissions
+Since the admin dashboard link has been removed, the workflow is:
+1.  **Users** submit tools via the "Submit a Tool" button.
+2.  This opens a **GitHub Issue** with the tool details.
+3.  **You (Admin)** view these submissions in the [Issues Tab](https://github.com/teamsleekcom-lgtm/ca-toolbox/issues).
+4.  **To Add a Tool:** Share the file/link with your Developer (or Chat Assistant), and they will update the `tools.json` file for you.
+
 ### Method 1: Using GitHub Releases (Recommended)
 
 ```bash
@@ -67,19 +74,6 @@ gh release create v1.0 path/to/your-tool.xlsx \
 
 ### Method 2: Using External Links
 - Users can share Google Drive, Dropbox, or any public link
-- No file size limits
-- Admin just copies the link
-
-### Adding to Database
-
-1. Go to admin panel: `https://teamsleekcom-lgtm.github.io/ca-toolbox/admin.html`
-2. Fill the "Add New Tool" form
-3. Click "Generate JSON Entry"
-4. Copy the generated JSON
-5. Click "Edit tools.json" button (or go to: https://github.com/teamsleekcom-lgtm/ca-toolbox/edit/main/data/tools.json)
-6. Paste the JSON into the `tools` array
-7. Commit the changes on GitHub
-8. Wait 2-3 minutes for GitHub Pages to update
 
 ## 📊 File Structure
 
@@ -106,10 +100,9 @@ ca-toolbox/
 
 ## 🔒 Admin Access
 
-- Admin panel URL: `https://teamsleekcom-lgtm.github.io/ca-toolbox/admin.html`
-- Keep this URL private (not publicly linked)
-- Anyone can access if they know the URL
-- All changes require GitHub account
+- The admin panel link is hidden from the public site.
+- **Workflow:** Users submit issues -> You approve/reject -> Developer updates the site.
+- All changes require repository access.
 
 ## 🛠️ Updating Tools
 
