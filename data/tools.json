@@ -1,0 +1,29 @@
+{
+  "lastUpdated": "2025-02-17T12:00:00Z",
+  "tools": [
+    {
+      "id": "tool-1708171200001",
+      "name": "GST Reconciliation Suite",
+      "creator": "CA Priya Sharma",
+      "downloadUrl": "https://github.com/teamsleekcom-lgtm/ca-toolbox/releases/download/v1.0/gst-reconciliation.xlsx",
+      "category": "Taxation",
+      "addedAt": "2025-02-17T10:00:00Z"
+    },
+    {
+      "id": "tool-1708171200002",
+      "name": "TDS Calculator Pro",
+      "creator": "CA Rajesh Kumar",
+      "downloadUrl": "https://github.com/teamsleekcom-lgtm/ca-toolbox/releases/download/v1.0/tds-calculator.xlsx",
+      "category": "Taxation",
+      "addedAt": "2025-02-17T10:00:00Z"
+    },
+    {
+      "id": "tool-1708171200003",
+      "name": "MCA Filing Checklist",
+      "creator": "CA Meera Patel",
+      "downloadUrl": "https://github.com/teamsleekcom-lgtm/ca-toolbox/releases/download/v1.0/mca-checklist.pdf",
+      "category": "MCA",
+      "addedAt": "2025-02-17T10:00:00Z"
+    }
+  ]
+}

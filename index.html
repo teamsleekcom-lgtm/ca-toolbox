@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CA Toolbox - Professional Tools for Chartered Accountants</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-900 font-sans">
+
+    <!-- Navbar / Header -->
+    <div class="max-w-5xl mx-auto px-4 py-8">
+        <div class="border border-gray-200 rounded-lg p-6 bg-white shadow-sm mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">THE CA TOOLBOX</h1>
+            <p class="text-gray-600 mb-4">Professional Tools by CAs, for CAs</p>
+            <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded transition duration-200">
+                Submit a Tool
+            </button>
+        </div>
+
+        <!-- Tool Directory -->
+        <div class="border border-gray-200 rounded-lg overflow-hidden">
+            <div id="loading" class="p-8 text-center text-gray-500">
+                Loading tools...
+            </div>
+            <div id="error" class="hidden p-8 text-center text-red-500">
+                Failed to load tools. Please try again later.
+            </div>
+            
+            <!-- Desktop Table -->
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200">
+                            <th class="px-6 py-3 text-sm font-semibold text-gray-700 w-16">Sr.</th>
+                            <th class="px-6 py-3 text-sm font-semibold text-gray-700">Tool Name</th>
+                            <th class="px-6 py-3 text-sm font-semibold text-gray-700 text-center w-32">Download</th>
+                            <th class="px-6 py-3 text-sm font-semibold text-gray-700">Creator</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tools-table-body" class="divide-y divide-gray-200">
+                        <!-- Tools will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile Cards -->
+            <div id="mobile-cards" class="md:hidden divide-y divide-gray-200">
+                <!-- Cards will be injected here -->
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-8 text-center text-sm text-gray-500">
+            <p class="mb-2">Total: <span id="tool-count">0</span> tools available</p>
+            <p class="mb-4">Made with ❤️ by the CA Community</p>
+            <div class="flex justify-center space-x-4">
+                <a href="https://github.com/teamsleekcom-lgtm/ca-toolbox" class="text-blue-600 hover:underline" target="_blank">View on GitHub</a>
+                <span class="text-gray-300">|</span>
+                <a href="admin.html" class="text-gray-400 hover:text-gray-600">Admin</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submission Modal -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-fade-in" onclick="event.stopPropagation()">
+            <h2 class="text-2xl font-bold mb-4">Submit a New Tool</h2>
+            <form id="submission-form" onsubmit="submitTool(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tool Name *</label>
+                    <input type="text" id="tool-name" required class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Your Name *</label>
+                    <input type="text" id="creator-name" required placeholder="CA FirstName LastName" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Download Link *</label>
+                    <input type="url" id="download-url" required placeholder="Google Drive/Dropbox link" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select id="category" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Taxation">Taxation</option>
+                        <option value="Audit">Audit</option>
+                        <option value="MCA">MCA</option>
+                        <option value="Templates">Templates</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                    <textarea id="description" rows="3" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Submit Tool</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const GITHUB_USERNAME = 'teamsleekcom-lgtm';
+        const REPO_NAME = 'ca-toolbox';
+        const TOOLS_JSON_URL = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/main/data/tools.json`;
+
+        // Fetch and display tools
+        async function fetchTools() {
+            try {
+                const response = await fetch(TOOLS_JSON_URL);
+                if (!response.ok) throw new Error('Failed to fetch tools');
+                const data = await response.json();
+                renderTools(data.tools);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('error').classList.remove('hidden');
+            }
+        }
+
+        function renderTools(tools) {
+            const tableBody = document.getElementById('tools-table-body');
+            const mobileCards = document.getElementById('mobile-cards');
+            const countSpan = document.getElementById('tool-count');
+
+            document.getElementById('loading').classList.add('hidden');
+            
+            // Update count
+            countSpan.textContent = tools.length;
+
+            tools.forEach((tool, index) => {
+                const srNo = index + 1;
+                
+                // Desktop Row
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 transition duration-150';
+                row.innerHTML = `
+                    <td class="px-6 py-4 text-sm text-gray-500">${srNo}</td>
+                    <td class="px-6 py-4 text-sm font-semibold text-gray-900">${tool.name}</td>
+                    <td class="px-6 py-4 text-center">
+                        <a href="${tool.downloadUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium">↓ Download</a>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${tool.creator}</td>
+                `;
+                tableBody.appendChild(row);
+
+                // Mobile Card
+                const card = document.createElement('div');
+                card.className = 'p-4 bg-white';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-bold text-gray-400">#${srNo}</span>
+                        <a href="${tool.downloadUrl}" target="_blank" class="text-sm font-medium text-blue-600 border border-blue-600 px-3 py-1 rounded hover:bg-blue-50">
+                            Download
+                        </a>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-1">${tool.name}</h3>
+                    <p class="text-sm text-gray-600">By ${tool.creator}</p>
+                `;
+                mobileCards.appendChild(card);
+            });
+        }
+
+        // Modal Logic
+        function openModal() {
+            document.getElementById('modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+            document.body.style.overflow = ''; // Restore scrolling
+            document.getElementById('submission-form').reset();
+        }
+
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') closeModal();
+        });
+
+        // Form Submission
+        function submitTool(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('tool-name').value;
+            const creator = document.getElementById('creator-name').value;
+            const url = document.getElementById('download-url').value;
+            const category = document.getElementById('category').value;
+            const desc = document.getElementById('description').value;
+
+            const bodyContent = `
+**Tool Name:** ${name}
+**Category:** ${category}
+**Download Link:** ${url}
+
+## Creator Information
+**Your Name:** ${creator}
+
+## Description
+${desc}
+
+---
+*Submitted via CA Toolbox Website*
+            `.trim();
+
+            const encodedBody = encodeURIComponent(bodyContent);
+            const encodedTitle = encodeURIComponent(`[SUBMISSION] ${name}`);
+            const issueUrl = `https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/issues/new?title=${encodedTitle}&body=${encodedBody}&labels=submission`;
+
+            // Open GitHub issue in new tab
+            window.open(issueUrl, '_blank');
+
+            alert('✅ Submission created! Please complete the GitHub issue that opened in a new tab.');
+            closeModal();
+        }
+
+        // Initialize
+        fetchTools();
+    </script>
+</body>
+</html>
