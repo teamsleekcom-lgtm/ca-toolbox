@@ -186,7 +186,9 @@
                     <td class="px-6 py-4 text-sm font-bold text-gray-900">${tool.name}</td>
                     <td class="px-6 py-4 text-sm text-gray-600">${tool.description || ''}</td>
                     <td class="px-6 py-4 text-center">
-                        <a href="${tool.downloadUrl}" target="_blank" class="inline-block px-4 py-2 border border-blue-600 text-blue-600 rounded hover:bg-blue-600 hover:text-white transition-colors duration-200 text-sm font-medium">↓ Download</a>
+                        ${tool.name === 'NFRA Compliance Tools'
+                        ? `<a href="${tool.downloadUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200 text-sm font-medium">nfratools.in</a>`
+                        : `<a href="${tool.downloadUrl}" target="_blank" class="inline-block px-4 py-2 border border-blue-600 text-blue-600 rounded hover:bg-blue-600 hover:text-white transition-colors duration-200 text-sm font-medium">↓ Download</a>`}
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-600 font-medium">${tool.creator}</td>
                 `;
@@ -200,9 +202,9 @@
                 card.innerHTML = `
                     <div class="flex justify-between items-start mb-3">
                         <span class="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">#${srNo}</span>
-                        <a href="${tool.downloadUrl}" target="_blank" class="text-sm font-medium text-blue-600 border border-blue-600 px-3 py-1 rounded hover:bg-blue-50 transition-colors duration-200">
-                            Download
-                        </a>
+                        ${tool.name === 'NFRA Compliance Tools'
+                        ? `<a href="${tool.downloadUrl}" target="_blank" class="text-sm font-medium text-blue-600 hover:underline">nfratools.in</a>`
+                        : `<a href="${tool.downloadUrl}" target="_blank" class="text-sm font-medium text-blue-600 border border-blue-600 px-3 py-1 rounded hover:bg-blue-50 transition-colors duration-200">Download</a>`}
                     </div>
                     <h3 class="font-bold text-gray-900 text-lg mb-1">${tool.name}</h3>
                     <p class="text-sm text-gray-600 mb-3">${tool.description || ''}</p>
