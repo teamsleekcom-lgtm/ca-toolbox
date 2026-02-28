@@ -24,18 +24,36 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
+
+        /* Fade in animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
     </style>
 </head>
 
-<body class="bg-white text-gray-900 font-sans">
+<body class="bg-gray-50 text-gray-900 font-sans">
 
     <!-- Navbar / Header -->
-    <div class="max-w-5xl mx-auto px-4 py-8">
-        <div class="border border-gray-200 rounded-lg p-6 bg-white shadow-sm mb-8">
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <div
+            class="border border-gray-200 rounded-lg p-8 bg-white shadow-sm mb-8 transition-shadow hover:shadow-md duration-300">
             <h1 class="text-3xl font-bold text-gray-900 mb-2">THE CA TOOLBOX</h1>
-            <p class="text-gray-600 mb-4">Professional Tools by CAs, for CAs</p>
+            <p class="text-gray-600 mb-6">Professional Financial Tools for CAs</p>
             <button onclick="openModal()"
-                class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded transition duration-200">
+                class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded transition-all duration-200 transform hover:-translate-y-0.5">
                 Submit a Tool
             </button>
         </div>
@@ -54,10 +72,11 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-gray-50 border-b border-gray-200">
-                            <th class="px-6 py-3 text-sm font-semibold text-gray-700 w-16">Sr.</th>
-                            <th class="px-6 py-3 text-sm font-semibold text-gray-700">Tool Name</th>
-                            <th class="px-6 py-3 text-sm font-semibold text-gray-700 text-center w-32">Download</th>
-                            <th class="px-6 py-3 text-sm font-semibold text-gray-700">Creator</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-700 w-16">Sr.</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-700 w-1/4">Tool Name</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-700">Description</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-700 text-center w-32">Download</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-gray-700 w-48">Creator</th>
                         </tr>
                     </thead>
                     <tbody id="tools-table-body" class="divide-y divide-gray-200">
@@ -74,7 +93,6 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-500">
-            <p class="mb-2">Total: <span id="tool-count">0</span> tools available</p>
             <p class="mb-4">Made with ❤️ by the CA Community</p>
             <div class="flex justify-center space-x-4">
 
@@ -151,41 +169,44 @@
         function renderTools(tools) {
             const tableBody = document.getElementById('tools-table-body');
             const mobileCards = document.getElementById('mobile-cards');
-            const countSpan = document.getElementById('tool-count');
 
             document.getElementById('loading').classList.add('hidden');
 
-            // Update count
-            countSpan.textContent = tools.length;
-
             tools.forEach((tool, index) => {
                 const srNo = index + 1;
+                const delay = index * 50; // Stagger animation
 
                 // Desktop Row
                 const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50 transition duration-150';
+                row.className = 'hover:bg-blue-50/50 transition duration-200 animate-fade-in-up';
+                row.style.animationDelay = `${delay}ms`;
+                row.style.opacity = '0';
                 row.innerHTML = `
                     <td class="px-6 py-4 text-sm text-gray-500">${srNo}</td>
-                    <td class="px-6 py-4 text-sm font-semibold text-gray-900">${tool.name}</td>
+                    <td class="px-6 py-4 text-sm font-bold text-gray-900">${tool.name}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${tool.description || ''}</td>
                     <td class="px-6 py-4 text-center">
-                        <a href="${tool.downloadUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium">↓ Download</a>
+                        <a href="${tool.downloadUrl}" target="_blank" class="inline-block px-4 py-2 border border-blue-600 text-blue-600 rounded hover:bg-blue-600 hover:text-white transition-colors duration-200 text-sm font-medium">↓ Download</a>
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-600">${tool.creator}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600 font-medium">${tool.creator}</td>
                 `;
                 tableBody.appendChild(row);
 
                 // Mobile Card
                 const card = document.createElement('div');
-                card.className = 'p-4 bg-white';
+                card.className = 'p-5 bg-white animate-fade-in-up';
+                card.style.animationDelay = `${delay}ms`;
+                card.style.opacity = '0';
                 card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="text-xs font-bold text-gray-400">#${srNo}</span>
-                        <a href="${tool.downloadUrl}" target="_blank" class="text-sm font-medium text-blue-600 border border-blue-600 px-3 py-1 rounded hover:bg-blue-50">
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">#${srNo}</span>
+                        <a href="${tool.downloadUrl}" target="_blank" class="text-sm font-medium text-blue-600 border border-blue-600 px-3 py-1 rounded hover:bg-blue-50 transition-colors duration-200">
                             Download
                         </a>
                     </div>
-                    <h3 class="font-bold text-gray-900 mb-1">${tool.name}</h3>
-                    <p class="text-sm text-gray-600">By ${tool.creator}</p>
+                    <h3 class="font-bold text-gray-900 text-lg mb-1">${tool.name}</h3>
+                    <p class="text-sm text-gray-600 mb-3">${tool.description || ''}</p>
+                    <p class="text-sm text-gray-500 border-t pt-2 mt-2">By <span class="font-medium text-gray-900">${tool.creator}</span></p>
                 `;
                 mobileCards.appendChild(card);
             });
