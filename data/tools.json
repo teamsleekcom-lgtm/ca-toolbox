@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-02-17T12:00:00Z",
+  "lastUpdated": "2026-03-07T13:00:00Z",
   "tools": [
     {
       "id": "tool-1708171200004",
@@ -9,6 +9,15 @@
       "category": "Audit",
       "description": "A complete suite of tools for auditor to comply with NFRA Rules : Audit Strategy Memorandom - (Locally hosted and Free), Audit Documentation on cloud(Paid)",
       "addedAt": "2026-02-28T19:00:00Z"
+    },
+    {
+      "id": "tool-1708171200005",
+      "name": "GSTR 2B Reconciliation Tool",
+      "creator": "Heuristic Techsol LLP",
+      "downloadUrl": "https://gstr2b-reconciler.vercel.app/",
+      "category": "Taxation",
+      "description": "simple tool to match GSTR 2B with Tally data. You can also Merge 2B with this tool.",
+      "addedAt": "2026-03-07T13:00:00Z"
     }
   ]
 }
