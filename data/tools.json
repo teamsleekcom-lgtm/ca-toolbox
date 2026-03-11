@@ -18,6 +18,24 @@
       "category": "Taxation",
       "description": "simple tool to match GSTR 2B with Tally data. You can also Merge 2B with this tool.",
       "addedAt": "2026-03-07T13:00:00Z"
+    },
+    {
+      "id": "tool-1708171200006",
+      "name": "DocuMind",
+      "creator": "Heuristic Techsol LLP",
+      "downloadUrl": "https://documind-hazel.vercel.app/",
+      "category": "Other",
+      "description": "secure and private alternative to ilovepdf",
+      "addedAt": "2026-03-11T21:25:00Z"
+    },
+    {
+      "id": "tool-1708171200007",
+      "name": "GST Returns Downloader",
+      "creator": "Heuristic Techsol LLP",
+      "downloadUrl": "https://gst-returns-downloader.vercel.app/",
+      "category": "Taxation",
+      "description": "Bulk GST Returns downloader for multiple clients.",
+      "addedAt": "2026-03-11T21:25:00Z"
     }
   ]
 }
