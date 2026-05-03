@@ -1,41 +1,15 @@
 {
-  "lastUpdated": "2026-03-07T13:00:00Z",
+  "lastUpdated": "2026-05-03T13:00:00Z",
   "tools": [
     {
       "id": "tool-1708171200004",
       "name": "NFRA Compliance Tools",
       "creator": "Heuristic Techsol LLP",
+      "creatorUrl": "http://nfratools.in",
       "downloadUrl": "http://nfratools.in",
       "category": "Audit",
       "description": "A complete suite of tools for auditor to comply with NFRA Rules : Audit Strategy Memorandom - (Locally hosted and Free), Audit Documentation on cloud(Paid)",
       "addedAt": "2026-02-28T19:00:00Z"
-    },
-    {
-      "id": "tool-1708171200005",
-      "name": "GSTR 2B Reconciliation Tool",
-      "creator": "Heuristic Techsol LLP",
-      "downloadUrl": "https://gstr2b-reconciler.vercel.app/",
-      "category": "Taxation",
-      "description": "simple tool to match GSTR 2B with Tally data. You can also Merge 2B with this tool.",
-      "addedAt": "2026-03-07T13:00:00Z"
-    },
-    {
-      "id": "tool-1708171200006",
-      "name": "DocuMind",
-      "creator": "Heuristic Techsol LLP",
-      "downloadUrl": "https://documind-hazel.vercel.app/",
-      "category": "Other",
-      "description": "secure and private alternative to ilovepdf",
-      "addedAt": "2026-03-11T21:25:00Z"
-    },
-    {
-      "id": "tool-1708171200007",
-      "name": "GST Returns Downloader",
-      "creator": "Heuristic Techsol LLP",
-      "downloadUrl": "https://gst-returns-downloader.vercel.app/",
-      "category": "Taxation",
-      "description": "Bulk GST Returns downloader for multiple clients.",
-      "addedAt": "2026-03-11T21:25:00Z"
     }
   ]
 }
