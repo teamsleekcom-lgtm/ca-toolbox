@@ -4,7 +4,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CA Toolbox - Professional Tools for Chartered Accountants</title>
+    <title>CA Toolbox — Free Tools for Chartered Accountants</title>
+    <meta name="description"
+        content="A free, open directory of tools built by Chartered Accountants, for Chartered Accountants. Audit, GST and Excel utilities that run in your browser. Zero cost, zero sign-up.">
+    <link rel="canonical" href="https://catoolbox.in/">
+    <meta name="theme-color" content="#2563eb">
+
+    <!-- Social sharing (WhatsApp, LinkedIn, X) -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="The CA Toolbox">
+    <meta property="og:title" content="The CA Toolbox — Free Tools for Chartered Accountants">
+    <meta property="og:description"
+        content="Free, browser-based tools built by CAs, for CAs. Zero cost, zero sign-up.">
+    <meta property="og:url" content="https://catoolbox.in/">
+    <meta property="og:image" content="https://catoolbox.in/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Custom scrollbar for better aesthetics */
@@ -39,144 +55,274 @@
         }
 
         .animate-fade-in-up {
-            animation: fadeIn 0.4s ease-out forwards;
+            animation: fadeIn 0.4s ease-out both;
+        }
+
+        /* If animations are disabled, content must still be visible */
+        @media (prefers-reduced-motion: reduce) {
+            .animate-fade-in-up {
+                animation: none;
+            }
         }
     </style>
 </head>
 
 <body class="bg-gray-50 text-gray-900 font-sans">
 
-    <!-- Navbar / Header -->
-    <div class="max-w-6xl mx-auto px-4 py-8">
-        <div
+    <main class="max-w-6xl mx-auto px-4 py-8">
+
+        <!-- Header -->
+        <header
             class="border border-gray-200 rounded-lg p-8 bg-white shadow-sm mb-8 transition-shadow hover:shadow-md duration-300">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">THE CA TOOLBOX</h1>
-            <p class="text-gray-600 mb-6">Professional Financial Tools for CAs</p>
-            <a href="https://www.linkedin.com/company/catoolbox-in/" target="_blank"
-                class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded transition-all duration-200 transform hover:-translate-y-0.5">
-                Submit a Tool
-            </a>
-        </div>
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-blue-600 text-white font-bold text-sm select-none"
+                            aria-hidden="true">CA</span>
+                        <h1 class="text-3xl font-bold text-gray-900">THE CA TOOLBOX</h1>
+                    </div>
+                    <p class="text-gray-600">Free, browser-based tools built by Chartered Accountants, for Chartered
+                        Accountants.</p>
+                    <div class="flex flex-wrap gap-2 mt-4">
+                        <span class="text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-full px-3 py-1">100%
+                            Free</span>
+                        <span class="text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-full px-3 py-1">No
+                            Sign-up</span>
+                        <span class="text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-full px-3 py-1">Open
+                            Source</span>
+                    </div>
+                </div>
+                <a id="submit-btn" href="https://www.linkedin.com/messaging/thread/new/?recipient=116474011"
+                    target="_blank" rel="noopener noreferrer" title="Opens a direct message to our LinkedIn Page"
+                    class="inline-block self-start bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded transition-all duration-200 transform hover:-translate-y-0.5 whitespace-nowrap">
+                    Submit a Tool
+                </a>
+            </div>
+        </header>
 
         <!-- Tool Directory -->
-        <div class="border border-gray-200 rounded-lg overflow-hidden">
+        <section aria-label="Tool directory">
+            <!-- Summary line (hidden until data loads) -->
+            <div id="summary" class="hidden justify-between items-center mb-4 px-1 text-xs text-gray-500">
+                <span id="summary-count"></span>
+                <span id="summary-updated"></span>
+            </div>
+
             <div id="loading" class="p-8 text-center text-gray-500">
                 Loading tools...
             </div>
-            <div id="error" class="hidden p-8 text-center text-red-500">
-                Failed to load tools. Please try again later.
+            <div id="error" hidden class="p-8 text-center">
+                <p class="text-red-500 mb-4">Couldn't load the tool list. Check your connection and try again.</p>
+                <button onclick="fetchTools()"
+                    class="text-sm font-medium text-blue-600 border border-blue-600 rounded px-4 py-2 hover:bg-blue-50 transition-colors duration-200">Retry</button>
+            </div>
+            <div id="empty" hidden
+                class="p-8 text-center text-gray-500 border border-dashed border-gray-300 rounded-xl bg-white">
+                No tools listed yet. Know a great free tool for CAs?
+                <a class="submit-link text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer"
+                    href="https://www.linkedin.com/messaging/thread/new/?recipient=116474011">Submit it</a>!
             </div>
 
-            <!-- Desktop Table -->
-            <div class="hidden md:block overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50 border-b border-gray-200">
-                            <th class="px-6 py-4 text-sm font-semibold text-gray-700 w-16">Sr.</th>
-                            <th class="px-6 py-4 text-sm font-semibold text-gray-700 w-1/4">Tool Name</th>
-                            <th class="px-6 py-4 text-sm font-semibold text-gray-700">Description</th>
-                            <th class="px-6 py-4 text-sm font-semibold text-gray-700 text-center w-32">Download</th>
-                            <th class="px-6 py-4 text-sm font-semibold text-gray-700 w-48">Creator</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tools-table-body" class="divide-y divide-gray-200">
-                        <!-- Tools will be injected here -->
-                    </tbody>
-                </table>
+            <!-- Cards -->
+            <div id="tools-grid" class="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Tool cards will be injected here -->
             </div>
-
-            <!-- Mobile Cards -->
-            <div id="mobile-cards" class="md:hidden divide-y divide-gray-200">
-                <!-- Cards will be injected here -->
-            </div>
-        </div>
+        </section>
 
         <!-- Footer -->
-        <div class="mt-8 text-center text-sm text-gray-500">
+        <footer class="mt-10 text-center text-sm text-gray-500">
             <p class="mb-4">Made with ❤️ by the CA Community</p>
             <div class="flex justify-center space-x-4">
-
+                <a href="https://www.linkedin.com/company/catoolbox-in/" target="_blank" rel="noopener noreferrer"
+                    class="text-gray-500 hover:text-blue-600 transition-colors duration-200">LinkedIn</a>
+                <a href="https://github.com/teamsleekcom-lgtm/ca-toolbox" target="_blank" rel="noopener noreferrer"
+                    class="text-gray-500 hover:text-blue-600 transition-colors duration-200">GitHub</a>
             </div>
-        </div>
-    </div>
-
-
+            <p class="mt-3 text-xs text-gray-400">Listings are provided by their creators. Not affiliated with ICAI or
+                NFRA.</p>
+        </footer>
+    </main>
 
     <script>
+        /* ============================================================
+           Site configuration
+           ============================================================ */
+        // Email used by every "Submit a Tool" link. Leave '' to fall back
+        // to the LinkedIn Page DM. Example: 'tools@catoolbox.in'
+        const SUBMIT_EMAIL = '';
+
+        const LINKEDIN_DM_URL = 'https://www.linkedin.com/messaging/thread/new/?recipient=116474011';
+        const SUBMIT_URL = SUBMIT_EMAIL
+            ? `mailto:${SUBMIT_EMAIL}?subject=${encodeURIComponent('Tool Submission — CA Toolbox')}&body=${encodeURIComponent('Tool name:\nLink (where the tool lives):\nShort description:\nCreator / firm:\n')}`
+            : LINKEDIN_DM_URL;
+
         const GITHUB_USERNAME = 'teamsleekcom-lgtm';
         const REPO_NAME = 'ca-toolbox';
-        const TOOLS_JSON_URL = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/main/data/tools.json`;
 
-        // Fetch and display tools
-        async function fetchTools() {
-            try {
-                const response = await fetch(TOOLS_JSON_URL);
-                if (!response.ok) throw new Error('Failed to fetch tools');
-                const data = await response.json();
-                renderTools(data.tools);
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('loading').classList.add('hidden');
-                document.getElementById('error').classList.remove('hidden');
+        // Prefer the copy served alongside the page; fall back to GitHub raw
+        // so the page still works when opened as a local file.
+        const DATA_SOURCES = [
+            './data/tools.json',
+            `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/main/data/tools.json`
+        ];
+
+        /* ============================================================
+           Card colour palette — add a colour here and reference it
+           from tools.json ("color": "emerald") to use it.
+           ============================================================ */
+        const PALETTES = {
+            blue: {
+                grad: 'from-blue-600 to-indigo-600',
+                pill: 'bg-blue-50 text-blue-700 border-blue-100',
+                btn: 'bg-blue-600 hover:bg-blue-700',
+                ring: 'hover:border-blue-300'
+            },
+            emerald: {
+                grad: 'from-emerald-500 to-teal-600',
+                pill: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+                btn: 'bg-emerald-600 hover:bg-emerald-700',
+                ring: 'hover:border-emerald-300'
+            },
+            violet: {
+                grad: 'from-violet-600 to-purple-600',
+                pill: 'bg-violet-50 text-violet-700 border-violet-100',
+                btn: 'bg-violet-600 hover:bg-violet-700',
+                ring: 'hover:border-violet-300'
+            },
+            amber: {
+                grad: 'from-amber-500 to-orange-600',
+                pill: 'bg-amber-50 text-amber-700 border-amber-100',
+                btn: 'bg-amber-600 hover:bg-amber-700',
+                ring: 'hover:border-amber-300'
+            },
+            rose: {
+                grad: 'from-rose-500 to-pink-600',
+                pill: 'bg-rose-50 text-rose-700 border-rose-100',
+                btn: 'bg-rose-600 hover:bg-rose-700',
+                ring: 'hover:border-rose-300'
+            },
+            cyan: {
+                grad: 'from-cyan-500 to-sky-600',
+                pill: 'bg-cyan-50 text-cyan-700 border-cyan-100',
+                btn: 'bg-cyan-600 hover:bg-cyan-700',
+                ring: 'hover:border-cyan-300'
             }
+        };
+        const FALLBACK_ORDER = ['blue', 'emerald', 'violet', 'amber', 'rose', 'cyan'];
+
+        // Apply the submit target to every submit link on the page
+        (function applySubmitUrl() {
+            document.getElementById('submit-btn').href = SUBMIT_URL;
+            document.querySelectorAll('.submit-link').forEach(a => a.href = SUBMIT_URL);
+            if (SUBMIT_EMAIL) {
+                document.getElementById('submit-btn').title = 'Opens an email to ' + SUBMIT_EMAIL;
+            }
+        })();
+
+        const escapeHtml = (value) => String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+
+        const safeUrl = (value) => {
+            try {
+                const url = new URL(String(value));
+                return (url.protocol === 'https:' || url.protocol === 'http:') ? url.href : '#';
+            } catch {
+                return '#';
+            }
+        };
+
+        const show = (id) => document.getElementById(id).hidden = false;
+        const hide = (id) => document.getElementById(id).hidden = true;
+
+        async function fetchTools() {
+            hide('error');
+            show('loading');
+            for (const url of DATA_SOURCES) {
+                try {
+                    const response = await fetch(url, { cache: 'no-cache' });
+                    if (!response.ok) continue;
+                    const data = await response.json();
+                    renderTools(data.tools, data.lastUpdated);
+                    return;
+                } catch {
+                    // Try the next source
+                }
+            }
+            hide('loading');
+            show('error');
         }
 
-        function renderTools(tools) {
-            const tableBody = document.getElementById('tools-table-body');
-            const mobileCards = document.getElementById('mobile-cards');
+        function renderTools(tools, lastUpdated) {
+            hide('loading');
 
-            document.getElementById('loading').classList.add('hidden');
+            const list = Array.isArray(tools) ? tools : [];
 
-            tools.forEach((tool, index) => {
-                const srNo = index + 1;
-                const delay = index * 50; // Stagger animation
+            const summary = document.getElementById('summary');
+            summary.classList.remove('hidden');
+            summary.classList.add('flex');
+            document.getElementById('summary-count').textContent =
+                `${list.length} tool${list.length === 1 ? '' : 's'} available`;
+            if (lastUpdated) {
+                const formatted = new Date(lastUpdated).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+                document.getElementById('summary-updated').textContent = `Updated ${formatted}`;
+            }
 
-                // Desktop Row
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-blue-50/50 transition duration-200 animate-fade-in-up';
-                row.style.animationDelay = `${delay}ms`;
-                row.style.opacity = '0';
-                row.innerHTML = `
-                    <td class="px-6 py-4 text-sm text-gray-500">${srNo}</td>
-                    <td class="px-6 py-4 text-sm font-bold text-gray-900">${tool.name}</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">${tool.description || ''}</td>
-                    <td class="px-6 py-4 text-center">
-                        ${tool.name === 'NFRA Compliance Tools'
-                        ? `<a href="${tool.downloadUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200 text-sm font-medium">nfratools.in</a>`
-                        : `<a href="${tool.downloadUrl}" target="_blank" class="inline-block px-4 py-2 border border-blue-600 text-blue-600 rounded hover:bg-blue-600 hover:text-white transition-colors duration-200 text-sm font-medium">↓ Download</a>`}
-                    </td>
-                    <td class="px-6 py-4 text-sm text-gray-600 font-medium">
-                        <div class="flex items-center">
-                            ${tool.creator}
-                            ${tool.creatorUrl ? `<a href="${tool.creatorUrl}" target="_blank" class="ml-2 text-blue-500 hover:text-blue-700" title="Creator Link"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg></a>` : ''}
-                        </div>
-                    </td>
-                `;
-                tableBody.appendChild(row);
+            if (list.length === 0) {
+                show('empty');
+                return;
+            }
 
-                // Mobile Card
-                const card = document.createElement('div');
-                card.className = 'p-5 bg-white animate-fade-in-up';
+            const grid = document.getElementById('tools-grid');
+
+            list.forEach((tool, index) => {
+                const delay = index * 60; // Stagger animation
+
+                const name = escapeHtml(tool.name);
+                const description = escapeHtml(tool.description);
+                const creator = escapeHtml(tool.creator);
+                const icon = escapeHtml(tool.icon || '🛠️');
+                const linkLabel = escapeHtml(tool.linkLabel || 'Open Tool');
+                const linkUrl = safeUrl(tool.downloadUrl);
+                const creatorUrl = tool.creatorUrl ? safeUrl(tool.creatorUrl) : '';
+                const creatorLinkIcon = creatorUrl
+                    ? `<a href="${creatorUrl}" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-blue-600 transition-colors duration-200" title="Creator website" aria-label="Creator website"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg></a>`
+                    : '';
+
+                // Colour: explicit from data, else rotate through the palette
+                const paletteKey = (tool.color && PALETTES[tool.color]) ? tool.color : FALLBACK_ORDER[index % FALLBACK_ORDER.length];
+                const colors = PALETTES[paletteKey];
+                const categoryPill = tool.category
+                    ? `<span class="text-xs font-semibold ${colors.pill} border rounded-full px-3 py-1 whitespace-nowrap">${escapeHtml(tool.category)}</span>`
+                    : '';
+
+                const card = document.createElement('article');
+                card.className = `group relative bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col animate-fade-in-up ${colors.ring}`;
                 card.style.animationDelay = `${delay}ms`;
-                card.style.opacity = '0';
                 card.innerHTML = `
-                    <div class="flex justify-between items-start mb-3">
-                        <span class="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">#${srNo}</span>
-                        ${tool.name === 'NFRA Compliance Tools'
-                        ? `<a href="${tool.downloadUrl}" target="_blank" class="text-sm font-medium text-blue-600 hover:underline">nfratools.in</a>`
-                        : `<a href="${tool.downloadUrl}" target="_blank" class="text-sm font-medium text-blue-600 border border-blue-600 px-3 py-1 rounded hover:bg-blue-50 transition-colors duration-200">Download</a>`}
+                    <div class="h-1.5 bg-gradient-to-r ${colors.grad}" aria-hidden="true"></div>
+                    <div class="p-6 flex flex-col flex-1">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${colors.grad} flex items-center justify-center text-2xl shadow-sm select-none" aria-hidden="true">${icon}</div>
+                            ${categoryPill}
+                        </div>
+                        <h3 class="font-bold text-lg text-gray-900 mb-2">${name}</h3>
+                        <p class="text-sm text-gray-600 leading-relaxed mb-5 flex-1 line-clamp-4">${description}</p>
+                        <div class="flex items-center justify-between gap-3 pt-4 border-t border-gray-100">
+                            <span class="text-xs text-gray-500 flex items-center gap-1.5 min-w-0">By <span class="font-medium text-gray-700 truncate">${creator}</span>${creatorLinkIcon}</span>
+                            <a href="${linkUrl}" target="_blank" rel="noopener noreferrer"
+                                class="${colors.btn} text-white text-sm font-medium px-4 py-2 rounded-lg transition-all duration-200 transform group-hover:-translate-y-0.5 whitespace-nowrap">${linkLabel}</a>
+                        </div>
                     </div>
-                    <h3 class="font-bold text-gray-900 text-lg mb-1">${tool.name}</h3>
-                    <p class="text-sm text-gray-600 mb-3">${tool.description || ''}</p>
-                    <p class="text-sm text-gray-500 border-t pt-2 mt-2 flex items-center justify-between">
-                        <span>By <span class="font-medium text-gray-900">${tool.creator}</span></span>
-                        ${tool.creatorUrl ? `<a href="${tool.creatorUrl}" target="_blank" class="text-blue-500 hover:text-blue-700" title="Creator Link"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg></a>` : ''}
-                    </p>
                 `;
-                mobileCards.appendChild(card);
+                grid.appendChild(card);
             });
-        }
 
+            grid.classList.remove('hidden');
+        }
 
         // Initialize
         fetchTools();

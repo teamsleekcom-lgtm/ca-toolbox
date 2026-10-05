@@ -1,6 +1,6 @@
 # The CA Toolbox
 
-Professional tools by Chartered Accountants, for Chartered Accountants.  
+Professional tools by Chartered Accountants, for Chartered Accountants.
 **Zero cost. Zero authentication. Open source.**
 
 ## 🎯 What is This?
@@ -9,57 +9,65 @@ A simple directory of Excel templates, calculators, and checklists created by CA
 
 ## 🌐 Live Site
 
-Visit: **https://teamsleekcom-lgtm.github.io/ca-toolbox/**
+Visit: **https://catoolbox.in** (also served at https://teamsleekcom-lgtm.github.io/ca-toolbox/)
 
 ## 📤 How to Submit a Tool
 
 1. Visit the website
-2. Click "Submit a Tool"
-3. Fill the form
-4. Complete the GitHub issue that opens
-5. Wait for admin approval
+2. Click "Submit a Tool" — it opens a **direct message to our LinkedIn Page** (`messaging/thread/new/?recipient=116474011`)
+3. Message us the tool details and link
+4. We review and add it to `data/tools.json`
 
-## 🔧 Setup (Already Done!)
+> To switch submissions to **email**, set `SUBMIT_EMAIL` at the top of the `<script>` block in `index.html` — every Submit link then becomes a pre-filled `mailto:` instead. Leave it `''` to keep the LinkedIn DM.
 
-Repository: https://github.com/teamsleekcom-lgtm/ca-toolbox
+> Note: the DM link only works for visitors signed in to LinkedIn (logged-out users get LinkedIn's login screen first, then continue to the message). It also requires **Page messaging to be enabled** in the Page's admin settings.
 
-### Next Steps
+## 🧰 Tools hosted on this site
+
+Some tools are hosted right here as part of the site, in addition to external listings:
+
+| URL | Tool | Source of truth |
+|-----|------|-----------------|
+| `/gstr2b/` | GSTR-2B Reconciliation Tool | `gstr2b-reconciler/` (separate repo) |
+
+After changing the reconciler's code, refresh the hosted copy:
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/teamsleekcom-lgtm/ca-toolbox.git
-cd ca-toolbox
+bash update-gstr2b.sh   # builds it and updates ./gstr2b
+git add gstr2b && git commit -m "Update GSTR-2B tool build" && git push
+```
 
-# 2. Create folder structure (if not exists)
-mkdir -p data releases .github/ISSUE_TEMPLATE
+`tools.json` entries for hosted tools can use `linkLabel: "Open Tool"` and point at their on-site path.
 
-# 3. Add all generated files to the repository
-# Copy: index.html, admin.html, data/tools.json, etc.
+## 📁 Repository Layout
 
-# 4. Commit and push
-git add .
-git commit -m "Add CA Toolbox platform files"
-git push origin main
+This repository **is** the website — GitHub Pages serves it at the repository root.
 
-# 5. Enable GitHub Pages
-gh repo edit --enable-pages --pages-branch main --pages-path /
+The working folders below are **local development copies of the tool projects themselves**, not part of the deployed site (they are listed in `.gitignore` and each has its own git repository):
 
-# Or via GitHub web interface:
-# Settings → Pages → Source: main branch → Save
-
-# 6. Wait 2-3 minutes, then visit:
-# https://teamsleekcom-lgtm.github.io/ca-toolbox/
+```
+CAToolbox/
+├── index.html              # The site (public tool directory)
+├── favicon.svg             # Site icon
+├── robots.txt / sitemap.xml
+├── CNAME                   # Custom domain: catoolbox.in
+├── data/
+│   └── tools.json          # The "database" of listed tools
+├── gstr2b/                 # Hosted tool: GSTR-2B Reconciler (built copy — do not edit by hand)
+├── update-gstr2b.sh        # Rebuilds ./gstr2b from the reconciler source
+├── releases/               # Optional file storage for tool downloads
+├── .github/
+│   └── ISSUE_TEMPLATE/     # Legacy tool-submission form (submit via LinkedIn/email now)
+├── nfra-compliance-tool/   # [local only] nfratools.in source
+└── gstr2b-reconciler/      # [local only] GSTR-2B reconciliation tool source
 ```
 
 ## 📦 Adding Tools (Admin Guide)
 
-## 📦 Adding Tools
-
 ### Workflow: Delegated Submissions
-1.  **Users** submit tools via the "Submit a Tool" button.
-2.  This opens a **GitHub Issue** with the tool details.
-3.  **You (Admin)** view these submissions in the [Issues Tab](https://github.com/teamsleekcom-lgtm/ca-toolbox/issues).
-4.  **To Add a Tool:** Share the file/link with your Developer (or Chat Assistant), and they will update the `tools.json` file for you.
+1.  **Users** submit tools via the "Submit a Tool" button (LinkedIn).
+2.  **You (Admin)** review the submission.
+3.  **To Add a Tool:** update `data/tools.json` (manually, on GitHub, or via your developer) and commit.
 
 ### Method 1: Using GitHub Releases (Recommended)
 
@@ -76,39 +84,30 @@ gh release create v1.0 path/to/your-tool.xlsx \
 ### Method 2: Using External Links
 - Users can share Google Drive, Dropbox, or any public link
 
-## 📊 File Structure
+### Tool entry fields
 
-```
-ca-toolbox/
-├── index.html           # Public directory
-├── admin.html          # Admin panel
-├── data/
-│   └── tools.json      # Database
-├── releases/           # Optional file storage
-├── .github/
-│   └── ISSUE_TEMPLATE/ # Submission form
-└── README.md
-```
+| Field | Required | Notes |
+|-------|----------|-------|
+| `id` | ✅ | Any unique string |
+| `name` | ✅ | Shown in the table |
+| `creator` | ✅ | Person or firm name |
+| `downloadUrl` | ✅ | Where the tool lives (https:// links) |
+| `description` | ✅ | One or two lines |
+| `category` | Optional | Shown as a badge (e.g. Audit, GST) |
+| `icon` | Optional | Emoji shown on the card (e.g. 🧾) |
+| `color` | Optional | Card colour: blue, emerald, violet, amber, rose or cyan (rotates automatically if omitted) |
+| `linkLabel` | Optional | Button text; defaults to "Open Tool" |
+| `creatorUrl` | Optional | Link shown next to the creator name |
+| `addedAt` / `lastUpdated` | Optional | ISO timestamps |
 
-## 💰 Costs
-
-| Item | Cost |
-|------|------|
-| GitHub Pages Hosting | $0 |
-| GitHub Storage (1GB) | $0 |
-| Domain (github.io) | $0 |
-| **Total** | **$0/month** |
-
-
+Bump the top-level `lastUpdated` when you change the list — the site displays it.
 
 ## 🛠️ Updating Tools
 
 **Option 1: GitHub Web UI**
 1. Go to: https://github.com/teamsleekcom-lgtm/ca-toolbox
 2. Navigate to `data/tools.json`
-3. Click edit button
-4. Make changes
-5. Commit
+3. Click edit, make changes, commit
 
 **Option 2: Git Command Line**
 ```bash
@@ -119,19 +118,24 @@ git commit -m "Update tools"
 git push
 ```
 
+## 💰 Costs
+
+| Item | Cost |
+|------|------|
+| GitHub Pages Hosting | $0 |
+| GitHub Storage (1GB) | $0 |
+| **Total** | **$0/month** |
+
 ## ❓ FAQ
 
-**Q: Can users download without a GitHub account?**  
+**Q: Can users download without a GitHub account?**
 A: Yes! The site is completely public.
 
-**Q: Where should I store tool files?**  
+**Q: Where should I store tool files?**
 A: GitHub Releases (free, unlimited bandwidth) or Google Drive.
 
-**Q: How do I delete a tool?**  
+**Q: How do I delete a tool?**
 A: Edit `data/tools.json` on GitHub and remove the entry.
-
-**Q: Can I use a custom domain?**  
-A: Yes! GitHub Pages supports custom domains for free.
 
 ## 📜 License
 

@@ -1,15 +1,31 @@
 {
-  "lastUpdated": "2026-05-03T13:00:00Z",
+  "lastUpdated": "2026-10-05T00:00:00Z",
   "tools": [
     {
       "id": "tool-1708171200004",
       "name": "NFRA Compliance Tools",
       "creator": "Heuristic Techsol LLP",
-      "creatorUrl": "http://nfratools.in",
-      "downloadUrl": "http://nfratools.in",
+      "creatorUrl": "https://nfratools.in",
+      "downloadUrl": "https://nfratools.in",
       "category": "Audit",
-      "description": "A complete suite of tools for auditor to comply with NFRA Rules : Audit Strategy Memorandom - (Locally hosted and Free), Audit Documentation on cloud(Paid)",
+      "icon": "🏛️",
+      "color": "blue",
+      "linkLabel": "nfratools.in",
+      "description": "A complete suite of tools for auditors to comply with NFRA rules: Audit Strategy Memorandum (locally hosted and free), Audit Documentation on cloud (paid).",
       "addedAt": "2026-02-28T19:00:00Z"
+    },
+    {
+      "id": "tool-gstr2b-reconciler",
+      "name": "GSTR-2B Reconciliation Tool",
+      "creator": "Heuristic Techsol LLP",
+      "creatorUrl": "https://nfratools.in",
+      "downloadUrl": "https://catoolbox.in/gstr2b/",
+      "category": "GST",
+      "icon": "🧾",
+      "color": "emerald",
+      "linkLabel": "Open Tool",
+      "description": "Match your Tally or Easy purchase register against the GST portal's GSTR-2B statement and get a color-coded ITC reconciliation report. Runs entirely in your browser — files never leave your device.",
+      "addedAt": "2026-10-05T00:00:00Z"
     }
   ]
 }
