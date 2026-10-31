@@ -122,14 +122,14 @@ gh release create v1.0 path/to/your-tool.xlsx \
 |-------|----------|-------|
 | `id` | ✅ | Any unique string |
 | `name` | ✅ | Shown in the table |
-| `creator` | ✅ | Person or firm name |
+| `creator` | Optional | Person or firm name (kept on record — not shown on cards) |
 | `downloadUrl` | ✅ | Where the tool lives (https:// links) |
 | `description` | ✅ | One or two lines |
 | `category` | Optional | Shown as a badge (e.g. Audit, GST) |
 | `icon` | Optional | Emoji shown on the card (e.g. 🧾) |
 | `color` | Optional | Card colour: blue, emerald, violet, amber, rose or cyan (rotates automatically if omitted) |
 | `linkLabel` | Optional | Button text; defaults to "Open Tool" |
-| `creatorUrl` | Optional | Link shown next to the creator name |
+| `creatorUrl` | Optional | Creator link (kept on record — not shown on cards) |
 | `addedAt` / `lastUpdated` | Optional | ISO timestamps |
 
 Bump the top-level `lastUpdated` when you change the list — the site displays it.

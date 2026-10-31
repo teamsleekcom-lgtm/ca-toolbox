@@ -309,14 +309,9 @@
 
                 const name = escapeHtml(tool.name);
                 const description = escapeHtml(tool.description);
-                const creator = escapeHtml(tool.creator);
                 const icon = escapeHtml(tool.icon || '🛠️');
                 const linkLabel = escapeHtml(tool.linkLabel || 'Open Tool');
                 const linkUrl = safeUrl(tool.downloadUrl);
-                const creatorUrl = tool.creatorUrl ? safeUrl(tool.creatorUrl) : '';
-                const creatorLinkIcon = creatorUrl
-                    ? `<a href="${creatorUrl}" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-blue-600 transition-colors duration-200" title="Creator website" aria-label="Creator website"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg></a>`
-                    : '';
 
                 // Colour: explicit from data, else rotate through the palette
                 const paletteKey = (tool.color && PALETTES[tool.color]) ? tool.color : FALLBACK_ORDER[index % FALLBACK_ORDER.length];
@@ -337,8 +332,7 @@
                         </div>
                         <h3 class="font-bold text-lg text-gray-900 mb-2">${name}</h3>
                         <p class="text-sm text-gray-600 leading-relaxed mb-5 flex-1 line-clamp-4">${description}</p>
-                        <div class="flex items-center justify-between gap-3 pt-4 border-t border-gray-100">
-                            <span class="text-xs text-gray-500 flex items-center gap-1.5 min-w-0">By <span class="font-medium text-gray-700 truncate">${creator}</span>${creatorLinkIcon}</span>
+                        <div class="flex items-center justify-end pt-4 border-t border-gray-100">
                             <a href="${linkUrl}" target="_blank" rel="noopener noreferrer"
                                 class="${colors.btn} text-white text-sm font-medium px-4 py-2 rounded-lg transition-all duration-200 transform group-hover:-translate-y-0.5 whitespace-nowrap">${linkLabel}</a>
                         </div>
