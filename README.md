@@ -32,6 +32,25 @@ Some tools are hosted right here as part of the site, in addition to external li
 | `/esigner/` | e-Signer (signing studio) | `esigner/index.html` (single-file tool, source lives here) |
 | `/computation/` | Computation of Income Generator | `computation/index.html` (single-file tool, source lives here) |
 | `/udin/` | UDIN Register | `udin/index.html` (single-file tool, source lives here) |
+| `/litigation/` | Litigation Tracker | `litigation/index.html` (single-file tool, source lives here) |
+| `/payroll/` | Payroll Tool | `payroll/index.html` (single-file tool, source lives here) |
+| `/bank-recon/` | Bank Reconciliation | `bank-recon/index.html` (single-file tool, source lives here) |
+| `/fixed-assets/` | Fixed Asset Manager | `fixed-assets/index.html` (single-file tool, source lives here) |
+| `/gstr1-recon/` | GSTR-1 ↔ Tally Recon | `gstr1-recon/index.html` (single-file tool, source lives here) |
+| `/tds-extractor/` | TDS Extractor | `tds-extractor/index.html` (single-file tool, source lives here) |
+
+## 🎨 Shared tool chrome (standard UI)
+
+Every hosted tool loads the same minimal chrome:
+
+```html
+<link rel="stylesheet" href="/toolbox.css">
+<script src="/toolbox.js" data-tool="Tool Name" defer></script>
+```
+
+`toolbox.js` injects a fixed top bar (← CA Toolbox · tool name · 🔒 in-browser badge), a footer when the tool has none, and powers the inline ⓘ help buttons — any element with `class="tb-i" data-help="explanation"` opens a popover on click. `toolbox.css` handles layout offsets for tools with sticky headers/sidebars and hides all chrome on print.
+
+> Note: `gstr2b/index.html` is a build artifact — if you regenerate it with `update-gstr2b.sh`, re-add the two chrome lines (and meta description) to the new `dist/index.html` before copying.
 
 After changing the reconciler's code, refresh the hosted copy:
 
@@ -60,6 +79,13 @@ CAToolbox/
 ├── esigner/                # Hosted tool: e-Signer (single-file, edit index.html directly)
 ├── computation/            # Hosted tool: Computation of Income (single-file, edit index.html directly)
 ├── udin/                   # Hosted tool: UDIN Register (single-file, edit index.html directly)
+├── litigation/             # Hosted tool: Litigation Tracker (single-file, edit index.html directly)
+├── payroll/                # Hosted tool: Payroll Tool (single-file, edit index.html directly)
+├── bank-recon/             # Hosted tool: Bank Reconciliation (single-file, edit index.html directly)
+├── fixed-assets/           # Hosted tool: Fixed Asset Manager (single-file, edit index.html directly)
+├── gstr1-recon/            # Hosted tool: GSTR-1 ↔ Tally Recon (single-file, edit index.html directly)
+├── tds-extractor/          # Hosted tool: TDS Extractor (single-file, edit index.html directly)
+├── toolbox.css / toolbox.js  # Shared chrome for all hosted tools
 ├── update-gstr2b.sh        # Rebuilds ./gstr2b from the reconciler source
 ├── releases/               # Optional file storage for tool downloads
 ├── .github/

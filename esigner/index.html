@@ -4,6 +4,8 @@
 <title>e-Signer — Digital Signing Studio</title>
 <meta name="description" content="Draft resolutions and letters on your letterhead, place signatures and stamps anywhere, and export to PDF. Everything runs in your browser — your documents never leave your device.">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="/toolbox.css">
+<script src="/toolbox.js" data-tool="e-Signer" defer></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,700&family=Instrument+Sans:wght@400;600&display=swap">
 <style>
 :root{--desk:#dfe3e8;--bar:#fbfbfc;--ink:#1d2733;--mut:#6b7684;--line:#c9d0d8;--acc:#1f4e79;--accbg:#e4edf6;--warn:#b3261e;
@@ -69,10 +71,10 @@ svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.6;fill:none}
 @page{size:A4;margin:0}}
 </style></head><body>
 <div class="bar" id="bar">
- <div class="g"><button class="t" onclick="location.href='/'" title="Back to CA Toolbox">← Toolbox</button><select id="dsel" title="Documents"></select><input id="dname" title="Document name" aria-label="Document name"></div>
+ <div class="g"><select id="dsel" title="Documents"></select><input id="dname" title="Document name" aria-label="Document name"></div>
  <span id="st"></span>
 </div>
-<aside id="lib"><button class="t" id="lc">Close</button><p class="mut" style="margin-top:8px">Upload once, then click to use. Headers, footers and letterheads apply to the whole document. Signatures and stamps go on the current page.</p><div id="libc"></div></aside>
+<aside id="lib"><button class="t" id="lc">Close</button><p class="mut" style="margin-top:8px">Upload once, then click to use. Headers, footers and letterheads apply to the whole document. Signatures and stamps go on the current page. <i class="tb-i" data-help="'Clear white' makes white pixels of a signature transparent so it blends over a letterhead. 'Repeat on all pages' clones the selected signature or stamp onto every page of the document.">i</i></p><div id="libc"></div></aside>
 <input type="file" id="file" accept="image/*" hidden>
 <div id="desk"></div>
 <script>

@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LitigaTrack — CA Litigation Manager</title>
+<meta name="description" content="Track Income Tax and GST litigation across all forums — notices, replies, hearings and deadlines on one dashboard with overdue alerts. Runs entirely in your browser.">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="/toolbox.css">
+<script src="/toolbox.js" data-tool="Litigation Tracker" defer></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #EEF0F4;
+  --surface: #FFFFFF;
+  --navy: #1B2E4B;
+  --navy-h: #243C62;
+  --gold: #8C6D1F;
+  --gold-tint: #FDF5E0;
+  --gold-btn-bg: rgba(180,140,40,0.18);
+  --gold-btn-border: rgba(180,140,40,0.35);
+  --gold-btn-text: #D4A820;
+  --text: #111827;
+  --text-2: #6B7280;
+  --border: #E2E5EB;
+  --red: #C53030;
+  --red-bg: #FEF2F2;
+  --amber: #B45309;
+  --amber-bg: #FFFBEB;
+  --green: #166534;
+  --green-bg: #F0FDF4;
+  --blue: #1E40AF;
+  --blue-bg: #EFF6FF;
+  --purple: #6D28D9;
+  --purple-bg: #F5F3FF;
+  --sidebar-w: 216px;
+  --r: 8px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  min-height: 100vh;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+/* ── SIDEBAR ── */
+#sidebar {
+  width: var(--sidebar-w);
+  background: var(--navy);
+  min-height: 100vh;
+  position: fixed;
+  top: 0; left: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+}
+.sb-logo {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.sb-logo-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+.sb-logo-sub {
+  font-size: 10.5px;
+  color: rgba(255,255,255,0.38);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+.sb-nav {
+  padding: 14px 10px;
+  flex: 1;
+}
+.sb-nav-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.28);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  padding: 2px 8px 6px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: rgba(255,255,255,0.58);
+  font-size: 13.5px;
+  font-weight: 500;
+  margin-bottom: 2px;
+  user-select: none;
+  transition: background 0.12s, color 0.12s;
+}
+.nav-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.88); }
+.nav-item.active { background: var(--gold-btn-bg); color: #E8C766; }
+.nav-item svg { flex-shrink: 0; }
+.sb-new-btn {
+  margin: 12px 10px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 12px;
+  background: var(--gold-btn-bg);
+  border: 1px solid var(--gold-btn-border);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--gold-btn-text);
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.12s;
+}
+.sb-new-btn:hover { background: rgba(180,140,40,0.28); }
+
+/* ── MAIN ── */
+#main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.page-title { font-size: 17px; font-weight: 600; }
+.page-sub { font-size: 11.5px; color: var(--text-2); margin-top: 1px; }
+.topbar-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.content { padding: 22px 26px; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background 0.12s, opacity 0.12s;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--navy); color: #fff; }
+.btn-primary:hover { background: var(--navy-h); }
+.btn-outline { background: #fff; color: var(--text); border: 1px solid var(--border); }
+.btn-outline:hover { background: var(--bg); }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-danger:hover { opacity: 0.88; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-xs { padding: 3px 8px; font-size: 11px; }
+
+/* ── STAT CARDS ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px 18px;
+  border-left-width: 3px;
+}
+.stat-card.c-navy { border-left-color: var(--navy); }
+.stat-card.c-red   { border-left-color: var(--red); }
+.stat-card.c-amber { border-left-color: #D97706; }
+.stat-card.c-green { border-left-color: #16A34A; }
+.stat-lbl { font-size: 10.5px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 7px; }
+.stat-val { font-size: 30px; font-weight: 700; line-height: 1; color: var(--text); }
+.stat-val.red { color: var(--red); }
+.stat-val.amber { color: #D97706; }
+.stat-sub { font-size: 11px; color: var(--text-2); margin-top: 5px; }
+
+/* ── CARDS & TABLES ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+.card-head {
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.card-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-count {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  background: var(--bg);
+  padding: 1px 8px;
+  border-radius: 20px;
+}
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  background: #F8FAFC;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+tbody td {
+  padding: 10px 16px;
+  border-bottom: 1px solid #F1F3F7;
+  vertical-align: middle;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: #FAFBFD; }
+.clickable-row { cursor: pointer; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.b-it      { background: var(--blue-bg); color: var(--blue); }
+.b-gst     { background: var(--purple-bg); color: var(--purple); }
+.b-overdue { background: var(--red-bg); color: var(--red); }
+.b-due-soon{ background: var(--amber-bg); color: var(--amber); }
+.b-pending { background: var(--blue-bg); color: var(--blue); }
+.b-replied { background: var(--green-bg); color: var(--green); }
+.b-active  { background: var(--green-bg); color: var(--green); }
+.b-disposed{ background: var(--bg); color: var(--text-2); border: 1px solid var(--border); }
+.b-stayed  { background: var(--amber-bg); color: var(--amber); }
+
+/* Days pill */
+.d-pill {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── FILTERS BAR ── */
+.filters-bar {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.input-search {
+  flex: 1;
+  min-width: 180px;
+  padding: 7px 11px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  background: var(--bg);
+  color: var(--text);
+}
+.input-search:focus { border-color: var(--navy); background: #fff; }
+.filter-sel {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.filter-sel:focus { border-color: var(--navy); }
+
+/* ── CASE DETAIL META ── */
+.case-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.meta-cell {
+  background: var(--surface);
+  padding: 11px 15px;
+}
+.meta-lbl { font-size: 9.5px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+.meta-val { font-size: 13.5px; font-weight: 500; color: var(--text); }
+
+/* ── EMPTY STATE ── */
+.empty {
+  text-align: center;
+  padding: 44px 24px;
+  color: var(--text-2);
+}
+.empty-icon { margin: 0 auto 12px; opacity: 0.25; }
+.empty-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
+.empty-desc { font-size: 12.5px; }
+
+/* ── MODAL ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,22,36,0.45);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal {
+  background: var(--surface);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 92vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+}
+.modal-sm { max-width: 380px; }
+.modal-head {
+  padding: 17px 20px 13px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-title { font-size: 15px; font-weight: 600; }
+.modal-close {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-2);
+  border: none;
+  background: none;
+  font-size: 19px;
+  line-height: 1;
+}
+.modal-close:hover { background: var(--bg); color: var(--text); }
+.modal-body { padding: 18px 20px; }
+.modal-foot {
+  padding: 13px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ── FORMS ── */
+.fg { display: flex; flex-direction: column; gap: 4px; }
+.f2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.f3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.span2 { grid-column: span 2; }
+label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+input[type="text"],
+input[type="date"],
+select,
+textarea {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text);
+  background: #fff;
+  outline: none;
+  width: 100%;
+  font-family: inherit;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(27,46,75,0.08); }
+textarea { resize: vertical; min-height: 58px; line-height: 1.5; }
+.fg-gap { margin-bottom: 12px; }
+
+/* ── ACTION BUTTONS ── */
+.act-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px; height: 27px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-2);
+  transition: all 0.1s;
+}
+.act-btn:hover { background: var(--bg); color: var(--text); }
+.act-btn.del:hover { background: var(--red-bg); color: var(--red); border-color: #FECACA; }
+
+/* ── MISC ── */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0 0 14px;
+}
+.back-btn:hover { color: var(--text); }
+.nowrap { white-space: nowrap; }
+.fw500 { font-weight: 500; }
+.section-hd {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+/* ── TOAST ── */
+#toast {
+  position: fixed;
+  bottom: 22px;
+  right: 22px;
+  background: var(--navy);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 999;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+#toast.show { opacity: 1; }
+
+.hidden { display: none !important; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ───── SIDEBAR ───── -->
+<aside id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-title">LitigaTrack</div>
+    <div class="sb-logo-sub">Litigation Manager</div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-nav-label">Menu</div>
+    <div class="nav-item active" id="nav-dashboard" onclick="showView('dashboard')">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" id="nav-cases" onclick="showView('cases')">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      All Cases
+    </div>
+  </div>
+  <div class="sb-new-btn" onclick="openCaseModal(null)">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    New Case
+  </div>
+</aside>
+
+<!-- ───── MAIN ───── -->
+<main id="main">
+
+  <!-- ── DASHBOARD VIEW ── -->
+  <div id="view-dashboard">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub" id="dash-sub">—</div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-primary btn-sm" onclick="openCaseModal(null)">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Case
+        </button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="stats-row" id="stats-row"></div>
+      <div class="card" id="overdue-card">
+        <div class="card-head">
+          <div class="card-title" style="color:var(--red);">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Overdue Replies
+            <span class="card-count" id="cnt-overdue">0</span>
+          </div>
+        </div>
+        <div id="overdue-wrap"></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Upcoming — Next 30 Days
+            <span class="card-count" id="cnt-upcoming">0</span>
+          </div>
+        </div>
+        <div id="upcoming-wrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CASES VIEW ── -->
+  <div id="view-cases" class="hidden">
+    <div class="topbar">
+      <div>
+        <div class="page-title">All Cases</div>
+        <div class="page-sub" id="cases-sub">—</div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-primary btn-sm" onclick="openCaseModal(null)">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Case
+        </button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="card">
+        <div class="filters-bar">
+          <input class="input-search" type="text" id="srch" placeholder="Search client, section, case no…" oninput="renderCases()">
+          <select class="filter-sel" id="flt-type" onchange="renderCases()">
+            <option value="">All Types</option>
+            <option value="IT">Income Tax</option>
+            <option value="GST">GST</option>
+          </select>
+          <select class="filter-sel" id="flt-level" onchange="renderCases()">
+            <option value="">All Levels</option>
+          </select>
+          <select class="filter-sel" id="flt-status" onchange="renderCases()">
+            <option value="">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Stayed">Stayed</option>
+            <option value="Disposed">Disposed</option>
+          </select>
+        </div>
+        <div id="cases-wrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CASE DETAIL VIEW ── -->
+  <div id="view-detail" class="hidden">
+    <div class="topbar">
+      <div id="detail-topbar-left">
+        <div class="page-title">Case Detail</div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-outline btn-sm" onclick="openCaseModal(currentCaseId)">Edit Case</button>
+        <button class="btn btn-primary btn-sm" onclick="openProcModal(null)">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Proceeding
+        </button>
+      </div>
+    </div>
+    <div class="content">
+      <button class="back-btn" onclick="showView('cases')">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to All Cases
+      </button>
+      <div id="detail-meta" class="case-meta-grid"></div>
+      <div class="section-hd">Proceedings &amp; Notices</div>
+      <div class="card">
+        <div id="procs-wrap"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── TOAST ── -->
+<div id="toast"></div>
+
+<!-- ── MODAL: CASE ── -->
+<div class="overlay hidden" id="ov-case" onclick="if(event.target===this)closeCaseModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="case-modal-ttl">New Case</div>
+      <button class="modal-close" onclick="closeCaseModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="f2 fg-gap">
+        <div class="fg span2">
+          <label>Client Name *</label>
+          <input type="text" id="f-client" placeholder="e.g. ABC Pvt Ltd">
+        </div>
+        <div class="fg">
+          <label>Case Type * <i class="tb-i" data-help="Pick Income Tax or GST — the list of forums, and the section suggestions, change automatically to match the selected law.">i</i></label>
+          <select id="f-type" onchange="onTypeChange()">
+            <option value="IT">Income Tax</option>
+            <option value="GST">GST</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Level / Forum *</label>
+          <select id="f-level"></select>
+        </div>
+        <div class="fg">
+          <label>Section *</label>
+          <input type="text" id="f-section" list="section-opts" placeholder="e.g. 143(3) or Sec 73">
+          <datalist id="section-opts"></datalist>
+        </div>
+        <div class="fg">
+          <label id="f-year-lbl">Assessment Year *</label>
+          <input type="text" id="f-year" placeholder="e.g. AY 2022-23">
+        </div>
+        <div class="fg">
+          <label>Case / Demand No. <span style="text-transform:none;font-weight:400;">(optional)</span></label>
+          <input type="text" id="f-caseno" placeholder="Reference number">
+        </div>
+        <div class="fg">
+          <label>Status <i class="tb-i" data-help="Active = in progress. Stayed = a stay order holds the demand in abeyance. Disposed = finally decided, no further tracking needed.">i</i></label>
+          <select id="f-status">
+            <option value="Active">Active</option>
+            <option value="Stayed">Stayed</option>
+            <option value="Disposed">Disposed</option>
+          </select>
+        </div>
+        <div class="fg span2">
+          <label>Brief Description <span style="text-transform:none;font-weight:400;">(optional)</span></label>
+          <textarea id="f-desc" placeholder="Nature of dispute, demand amount, brief facts…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeCaseModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCase()">Save Case</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: PROCEEDING ── -->
+<div class="overlay hidden" id="ov-proc" onclick="if(event.target===this)closeProcModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="proc-modal-ttl">Add Proceeding</div>
+      <button class="modal-close" onclick="closeProcModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="f2 fg-gap">
+        <div class="fg span2">
+          <label>Notice / Proceeding Subject *</label>
+          <input type="text" id="p-subject" placeholder="e.g. Notice u/s 142(1) — Calling for information">
+        </div>
+        <div class="fg">
+          <label>Notice Date *</label>
+          <input type="date" id="p-ndate">
+        </div>
+        <div class="fg">
+          <label>Reply Due Date * <i class="tb-i" data-help="The dashboard's overdue and 'due soon' alerts are driven by this date. Enter the actual filing date in 'Actual Reply Date' once the reply is submitted.">i</i></label>
+          <input type="date" id="p-duedate">
+        </div>
+        <div class="fg">
+          <label>Actual Reply Date</label>
+          <input type="date" id="p-replydate">
+        </div>
+        <div class="fg">
+          <label>Next Hearing Date</label>
+          <input type="date" id="p-heardate">
+        </div>
+        <div class="fg span2">
+          <label>Remarks</label>
+          <textarea id="p-remarks" placeholder="Documents submitted, officer name, demand amount, notes…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeProcModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProc()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: CONFIRM ── -->
+<div class="overlay hidden" id="ov-confirm">
+  <div class="modal modal-sm">
+    <div class="modal-head">
+      <div class="modal-title">Confirm Delete</div>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-msg" style="color:var(--text-2);font-size:13.5px;"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" id="confirm-cancel">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════
+// DATA LAYER
+// ════════════════════════════════════
+const STORE = 'ca_litigate_v2';
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORE)) || []; }
+  catch { return []; }
+}
+function save(d) {
+  localStorage.setItem(STORE, JSON.stringify(d));
+}
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+
+// ════════════════════════════════════
+// CONSTANTS
+// ════════════════════════════════════
+const IT_LEVELS  = ['AO (Assessing Officer)','CIT(A)','NFAC','DRP','ITAT','High Court','Supreme Court','Other'];
+const GST_LEVELS = ['Adjudicating Authority','First Appellate Authority','Appellate Authority (Commissioner)','GSTAT','High Court','Supreme Court','Other'];
+const IT_SECTIONS  = ['143(1)','143(2)','143(3)','144','148','148A','153A','153C','263','264','270A','271AAC','271B','271C','276C','Other'];
+const GST_SECTIONS = ['73','74','75','76','83','122','129','130','61','62','63','Other'];
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ════════════════════════════════════
+// STATE
+// ════════════════════════════════════
+let currentCaseId  = null;
+let editingCaseId  = null;
+let editingProcId  = null;
+let currentView    = 'dashboard';
+
+// ════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════
+function todayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function daysTo(dateStr) {
+  if (!dateStr) return null;
+  const diff = new Date(dateStr) - new Date(todayStr());
+  return Math.ceil(diff / 86400000);
+}
+
+function fmt(d) {
+  if (!d) return '—';
+  const [y,m,day] = d.split('-');
+  return `${parseInt(day)} ${MONTHS[parseInt(m)-1]} ${y}`;
+}
+
+function esc(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function procStatus(p) {
+  if (p.replydate) return 'replied';
+  if (!p.duedate) return 'pending';
+  const d = daysTo(p.duedate);
+  if (d < 0)  return 'overdue';
+  if (d <= 7) return 'due-soon';
+  return 'pending';
+}
+
+function statusBadge(st) {
+  const m = {
+    'replied':  ['b-replied','Replied'],
+    'overdue':  ['b-overdue','Overdue'],
+    'due-soon': ['b-due-soon','Due Soon'],
+    'pending':  ['b-pending','Pending'],
+  };
+  const [cls,lbl] = m[st] || ['b-pending','Pending'];
+  return `<span class="badge ${cls}">${lbl}</span>`;
+}
+
+function daysPill(p) {
+  if (p.replydate) return `<span style="font-size:11.5px;color:var(--green);font-weight:600;">✓ ${fmt(p.replydate)}</span>`;
+  if (!p.duedate) return '—';
+  const d = daysTo(p.duedate);
+  if (d < 0)  return `<span class="d-pill b-overdue">${Math.abs(d)}d overdue</span>`;
+  if (d === 0) return `<span class="d-pill b-overdue">Due today</span>`;
+  if (d <= 7) return `<span class="d-pill b-due-soon">${d}d left</span>`;
+  return `<span class="d-pill b-pending">${d}d left</span>`;
+}
+
+function pendingProcs(c) { return (c.proceedings||[]).filter(p=>!p.replydate); }
+function overdueProcs(c) { return (c.proceedings||[]).filter(p=>!p.replydate&&p.duedate&&daysTo(p.duedate)<0); }
+
+// ════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════
+function showView(v, caseId) {
+  ['dashboard','cases','detail'].forEach(x => {
+    document.getElementById(`view-${x}`).classList.add('hidden');
+    const n = document.getElementById(`nav-${x}`);
+    if (n) n.classList.remove('active');
+  });
+  document.getElementById(`view-${v}`).classList.remove('hidden');
+  const navKey = v === 'detail' ? 'cases' : v;
+  const navEl = document.getElementById(`nav-${navKey}`);
+  if (navEl) navEl.classList.add('active');
+  currentView = v;
+
+  if (v === 'dashboard') renderDashboard();
+  else if (v === 'cases') renderCases();
+  else if (v === 'detail') { currentCaseId = caseId; renderDetail(); }
+}
+
+// ════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════
+function renderDashboard() {
+  const all = load();
+  const active = all.filter(c => c.status !== 'Disposed');
+  const it  = active.filter(c => c.type === 'IT').length;
+  const gst = active.filter(c => c.type === 'GST').length;
+
+  let overdueRows = [], upcomingRows = [], dueIn7 = 0;
+
+  active.forEach(c => {
+    (c.proceedings||[]).forEach(p => {
+      if (p.replydate || !p.duedate) return;
+      const d = daysTo(p.duedate);
+      const row = {c, p, d};
+      if (d < 0) overdueRows.push(row);
+      else if (d <= 30) {
+        upcomingRows.push(row);
+        if (d <= 7) dueIn7++;
+      }
+    });
+  });
+
+  overdueRows.sort((a,b)=>a.d-b.d);
+  upcomingRows.sort((a,b)=>a.d-b.d);
+
+  document.getElementById('dash-sub').textContent =
+    `${all.length} total cases — ${active.length} active · as of ${fmt(todayStr())}`;
+
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card c-navy">
+      <div class="stat-lbl">Active Cases</div>
+      <div class="stat-val">${active.length}</div>
+      <div class="stat-sub">${it} IT · ${gst} GST</div>
+    </div>
+    <div class="stat-card c-red">
+      <div class="stat-lbl">Overdue Replies</div>
+      <div class="stat-val red">${overdueRows.length}</div>
+      <div class="stat-sub">Require immediate action</div>
+    </div>
+    <div class="stat-card c-amber">
+      <div class="stat-lbl">Due in 7 Days</div>
+      <div class="stat-val amber">${dueIn7}</div>
+      <div class="stat-sub">Upcoming this week</div>
+    </div>
+    <div class="stat-card c-green">
+      <div class="stat-lbl">Due in 30 Days</div>
+      <div class="stat-val">${upcomingRows.length}</div>
+      <div class="stat-sub">Total upcoming notices</div>
+    </div>
+  `;
+
+  document.getElementById('cnt-overdue').textContent = overdueRows.length;
+  document.getElementById('cnt-upcoming').textContent = upcomingRows.length;
+
+  document.getElementById('overdue-wrap').innerHTML = overdueRows.length
+    ? deadlineTable(overdueRows)
+    : `<div class="empty"><div class="empty-title" style="color:var(--green);">✓ No overdue replies</div></div>`;
+
+  document.getElementById('upcoming-wrap').innerHTML = upcomingRows.length
+    ? deadlineTable(upcomingRows)
+    : `<div class="empty"><div class="empty-title">No upcoming deadlines in the next 30 days</div></div>`;
+}
+
+function deadlineTable(rows) {
+  return `<table><thead><tr>
+    <th>Client</th><th>Type</th><th>Level</th><th>Section</th><th>Year</th>
+    <th>Notice / Subject</th><th>Due Date</th><th>Status</th>
+  </tr></thead><tbody>
+    ${rows.map(({c,p})=>`
+      <tr class="clickable-row" onclick="showView('detail','${c.id}')">
+        <td class="fw500">${esc(c.client)}</td>
+        <td><span class="badge b-${c.type.toLowerCase()}">${c.type}</span></td>
+        <td style="font-size:12px;">${esc(c.level)}</td>
+        <td>${esc(c.section)}</td>
+        <td>${esc(c.year)}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.subject)}</td>
+        <td class="nowrap">${fmt(p.duedate)}</td>
+        <td>${daysPill(p)}</td>
+      </tr>`).join('')}
+  </tbody></table>`;
+}
+
+// ════════════════════════════════════
+// ALL CASES TABLE
+// ════════════════════════════════════
+function renderCases() {
+  const all = load();
+  const q      = (document.getElementById('srch')?.value||'').toLowerCase();
+  const fType  = document.getElementById('flt-type')?.value||'';
+  const fLevel = document.getElementById('flt-level')?.value||'';
+  const fStat  = document.getElementById('flt-status')?.value||'';
+
+  // Populate level filter
+  const lvlSel = document.getElementById('flt-level');
+  const curLvlVal = lvlSel.value;
+  const allLevels = [...new Set(all.map(c=>c.level).filter(Boolean))].sort();
+  lvlSel.innerHTML = `<option value="">All Levels</option>`
+    + allLevels.map(l=>`<option value="${esc(l)}" ${l===curLvlVal?'selected':''}>${esc(l)}</option>`).join('');
+
+  const filtered = all.filter(c => {
+    const txt = [c.client,c.section,c.caseno,c.description,c.year].join(' ').toLowerCase();
+    return (!q || txt.includes(q))
+      && (!fType  || c.type   === fType)
+      && (!fLevel || c.level  === fLevel)
+      && (!fStat  || c.status === fStat);
+  });
+
+  document.getElementById('cases-sub').textContent =
+    `Showing ${filtered.length} of ${all.length} cases`;
+
+  const wrap = document.getElementById('cases-wrap');
+
+  if (!filtered.length) {
+    wrap.innerHTML = `<div class="empty">
+      <div class="empty-icon">
+        <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div class="empty-title">${all.length?'No cases match filters':'No cases yet'}</div>
+      <div class="empty-desc">${all.length?'Try adjusting your search.':'Click "New Case" to add your first case.'}</div>
+    </div>`;
+    return;
+  }
+
+  wrap.innerHTML = `<table><thead><tr>
+    <th>Client</th><th>Type</th><th>Level</th><th>Section</th><th>Year</th>
+    <th style="text-align:center;">Pending</th><th style="text-align:center;">Overdue</th>
+    <th>Status</th><th>Actions</th>
+  </tr></thead><tbody>
+    ${filtered.map(c=>{
+      const pnd = pendingProcs(c).length;
+      const ovd = overdueProcs(c).length;
+      return `<tr>
+        <td class="fw500 clickable-row" onclick="showView('detail','${c.id}')">${esc(c.client)}</td>
+        <td><span class="badge b-${c.type.toLowerCase()}">${c.type}</span></td>
+        <td style="font-size:12px;max-width:140px;">${esc(c.level)}</td>
+        <td>${esc(c.section)}</td>
+        <td>${esc(c.year)}</td>
+        <td style="text-align:center;">${pnd?`<span style="font-weight:600;color:var(--blue);">${pnd}</span>`:`<span style="color:var(--text-2);">0</span>`}</td>
+        <td style="text-align:center;">${ovd?`<span style="font-weight:700;color:var(--red);">${ovd}</span>`:`<span style="color:var(--text-2);">0</span>`}</td>
+        <td><span class="badge b-${c.status.toLowerCase()}">${c.status}</span></td>
+        <td class="nowrap" style="display:flex;gap:4px;align-items:center;">
+          <button class="act-btn" title="View" onclick="showView('detail','${c.id}')">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <button class="act-btn" title="Edit" onclick="openCaseModal('${c.id}')">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="act-btn del" title="Delete" onclick="confirmDelCase('${c.id}')">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </td>
+      </tr>`;
+    }).join('')}
+  </tbody></table>`;
+}
+
+// ════════════════════════════════════
+// CASE DETAIL
+// ════════════════════════════════════
+function renderDetail() {
+  const all = load();
+  const c = all.find(x=>x.id===currentCaseId);
+  if (!c) { showView('cases'); return; }
+
+  document.getElementById('detail-topbar-left').innerHTML = `
+    <div class="page-title">${esc(c.client)}</div>
+    <div class="page-sub">${c.type === 'IT'?'Income Tax':'GST'} &middot; ${esc(c.section)} &middot; ${esc(c.year)}</div>
+  `;
+
+  document.getElementById('detail-meta').innerHTML = `
+    <div class="meta-cell"><div class="meta-lbl">Client</div><div class="meta-val">${esc(c.client)}</div></div>
+    <div class="meta-cell"><div class="meta-lbl">Type</div><div class="meta-val">${c.type==='IT'?'Income Tax':'GST'}</div></div>
+    <div class="meta-cell"><div class="meta-lbl">Level / Forum</div><div class="meta-val">${esc(c.level)}</div></div>
+    <div class="meta-cell"><div class="meta-lbl">Section</div><div class="meta-val">${esc(c.section)}</div></div>
+    <div class="meta-cell"><div class="meta-lbl">Year</div><div class="meta-val">${esc(c.year)}</div></div>
+    <div class="meta-cell"><div class="meta-lbl">Case / Demand No.</div><div class="meta-val">${esc(c.caseno)||'—'}</div></div>
+    <div class="meta-cell"><div class="meta-lbl">Status</div><div class="meta-val"><span class="badge b-${c.status.toLowerCase()}">${c.status}</span></div></div>
+    <div class="meta-cell"><div class="meta-lbl">Description</div><div class="meta-val" style="font-size:12.5px;color:var(--text-2);">${esc(c.description)||'—'}</div></div>
+  `;
+
+  const procs = (c.proceedings||[]).slice().sort((a,b)=>(b.ndate||'').localeCompare(a.ndate||''));
+  const wrap = document.getElementById('procs-wrap');
+
+  if (!procs.length) {
+    wrap.innerHTML = `<div class="empty">
+      <div class="empty-icon">
+        <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div class="empty-title">No proceedings logged</div>
+      <div class="empty-desc">Click "Add Proceeding" to log a notice, order, or hearing.</div>
+    </div>`;
+    return;
+  }
+
+  wrap.innerHTML = `<table><thead><tr>
+    <th>Notice Date</th>
+    <th>Subject / Notice</th>
+    <th>Due Date</th>
+    <th>Reply Filed</th>
+    <th>Next Hearing</th>
+    <th>Status</th>
+    <th>Remarks</th>
+    <th>Actions</th>
+  </tr></thead><tbody>
+    ${procs.map(p=>{
+      const st = procStatus(p);
+      return `<tr>
+        <td class="nowrap">${fmt(p.ndate)}</td>
+        <td style="max-width:200px;">${esc(p.subject)}</td>
+        <td class="nowrap">
+          ${fmt(p.duedate)}
+          <div style="margin-top:2px;">${daysPill(p)}</div>
+        </td>
+        <td class="nowrap" style="font-size:12px;">${fmt(p.replydate)}</td>
+        <td class="nowrap" style="font-size:12px;">${fmt(p.heardate)}</td>
+        <td>${statusBadge(st)}</td>
+        <td style="font-size:12px;color:var(--text-2);max-width:140px;">${esc(p.remarks)||'—'}</td>
+        <td class="nowrap" style="display:flex;gap:4px;">
+          <button class="act-btn" title="Edit" onclick="openProcModal('${p.id}')">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="act-btn del" title="Delete" onclick="confirmDelProc('${p.id}')">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </td>
+      </tr>`;
+    }).join('')}
+  </tbody></table>`;
+}
+
+// ════════════════════════════════════
+// CASE MODAL
+// ════════════════════════════════════
+function onTypeChange() {
+  const t = document.getElementById('f-type').value;
+  const lvlSel = document.getElementById('f-level');
+  const levels = t === 'IT' ? IT_LEVELS : GST_LEVELS;
+  lvlSel.innerHTML = levels.map(l=>`<option>${l}</option>`).join('');
+  document.getElementById('f-year-lbl').textContent = t === 'IT' ? 'Assessment Year *' : 'Financial Year *';
+  document.getElementById('f-year').placeholder = t === 'IT' ? 'e.g. AY 2022-23' : 'e.g. FY 2022-23';
+  const sections = t === 'IT' ? IT_SECTIONS : GST_SECTIONS;
+  document.getElementById('section-opts').innerHTML = sections.map(s=>`<option value="${s}">`).join('');
+}
+
+function openCaseModal(id) {
+  editingCaseId = id || null;
+  onTypeChange();
+  if (id) {
+    const c = load().find(x=>x.id===id);
+    if (!c) return;
+    document.getElementById('case-modal-ttl').textContent = 'Edit Case';
+    document.getElementById('f-client').value  = c.client  || '';
+    document.getElementById('f-type').value    = c.type    || 'IT';
+    onTypeChange();
+    document.getElementById('f-level').value   = c.level   || '';
+    document.getElementById('f-section').value = c.section || '';
+    document.getElementById('f-year').value    = c.year    || '';
+    document.getElementById('f-caseno').value  = c.caseno  || '';
+    document.getElementById('f-status').value  = c.status  || 'Active';
+    document.getElementById('f-desc').value    = c.description || '';
+  } else {
+    document.getElementById('case-modal-ttl').textContent = 'New Case';
+    ['f-client','f-section','f-year','f-caseno','f-desc'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('f-type').value   = 'IT';
+    onTypeChange();
+    document.getElementById('f-status').value = 'Active';
+  }
+  document.getElementById('ov-case').classList.remove('hidden');
+  document.getElementById('f-client').focus();
+}
+
+function closeCaseModal() {
+  document.getElementById('ov-case').classList.add('hidden');
+  editingCaseId = null;
+}
+
+function saveCase() {
+  const client = document.getElementById('f-client').value.trim();
+  const section = document.getElementById('f-section').value.trim();
+  const year    = document.getElementById('f-year').value.trim();
+  if (!client)  { toast('Client name is required'); return; }
+  if (!section) { toast('Section is required'); return; }
+  if (!year)    { toast('Year is required'); return; }
+
+  const all = load();
+  const rec = {
+    client,
+    type:        document.getElementById('f-type').value,
+    level:       document.getElementById('f-level').value,
+    section,
+    year,
+    caseno:      document.getElementById('f-caseno').value.trim(),
+    status:      document.getElementById('f-status').value,
+    description: document.getElementById('f-desc').value.trim(),
+  };
+
+  if (editingCaseId) {
+    const i = all.findIndex(x=>x.id===editingCaseId);
+    if (i>-1) all[i] = {...all[i], ...rec};
+    toast('Case updated');
+  } else {
+    all.push({id:uid(), createdAt:todayStr(), proceedings:[], ...rec});
+    toast('Case added');
+  }
+
+  save(all);
+  closeCaseModal();
+  if (currentView === 'dashboard') renderDashboard();
+  else if (currentView === 'cases') renderCases();
+  else renderDetail();
+}
+
+// ════════════════════════════════════
+// PROCEEDING MODAL
+// ════════════════════════════════════
+function openProcModal(procId) {
+  editingProcId = procId || null;
+  if (procId && currentCaseId) {
+    const c = load().find(x=>x.id===currentCaseId);
+    const p = (c?.proceedings||[]).find(x=>x.id===procId);
+    if (p) {
+      document.getElementById('proc-modal-ttl').textContent = 'Edit Proceeding';
+      document.getElementById('p-subject').value   = p.subject   || '';
+      document.getElementById('p-ndate').value     = p.ndate     || '';
+      document.getElementById('p-duedate').value   = p.duedate   || '';
+      document.getElementById('p-replydate').value = p.replydate || '';
+      document.getElementById('p-heardate').value  = p.heardate  || '';
+      document.getElementById('p-remarks').value   = p.remarks   || '';
+    }
+  } else {
+    document.getElementById('proc-modal-ttl').textContent = 'Add Proceeding';
+    document.getElementById('p-subject').value   = '';
+    document.getElementById('p-ndate').value     = todayStr();
+    document.getElementById('p-duedate').value   = '';
+    document.getElementById('p-replydate').value = '';
+    document.getElementById('p-heardate').value  = '';
+    document.getElementById('p-remarks').value   = '';
+  }
+  document.getElementById('ov-proc').classList.remove('hidden');
+  document.getElementById('p-subject').focus();
+}
+
+function closeProcModal() {
+  document.getElementById('ov-proc').classList.add('hidden');
+  editingProcId = null;
+}
+
+function saveProc() {
+  const subject  = document.getElementById('p-subject').value.trim();
+  const ndate    = document.getElementById('p-ndate').value;
+  const duedate  = document.getElementById('p-duedate').value;
+  const replydate= document.getElementById('p-replydate').value || null;
+  const heardate = document.getElementById('p-heardate').value  || null;
+  const remarks  = document.getElementById('p-remarks').value.trim();
+
+  if (!subject) { toast('Notice subject is required'); return; }
+  if (!duedate) { toast('Reply due date is required'); return; }
+
+  const all  = load();
+  const cIdx = all.findIndex(x=>x.id===currentCaseId);
+  if (cIdx === -1) return;
+  if (!all[cIdx].proceedings) all[cIdx].proceedings = [];
+
+  const proc = {id: editingProcId||uid(), subject, ndate, duedate, replydate, heardate, remarks};
+
+  if (editingProcId) {
+    const pIdx = all[cIdx].proceedings.findIndex(p=>p.id===editingProcId);
+    if (pIdx>-1) all[cIdx].proceedings[pIdx] = proc;
+    toast('Proceeding updated');
+  } else {
+    all[cIdx].proceedings.push(proc);
+    toast('Proceeding added');
+  }
+
+  save(all);
+  closeProcModal();
+  renderDetail();
+}
+
+// ════════════════════════════════════
+// DELETE
+// ════════════════════════════════════
+function confirmDelCase(id) {
+  const c = load().find(x=>x.id===id);
+  document.getElementById('confirm-msg').textContent =
+    `Delete "${c?.client}"? This will also delete all ${c?.proceedings?.length||0} proceedings. This cannot be undone.`;
+  document.getElementById('confirm-ok').onclick = () => {
+    save(load().filter(x=>x.id!==id));
+    closeConfirm();
+    toast('Case deleted');
+    showView('cases');
+  };
+  document.getElementById('confirm-cancel').onclick = closeConfirm;
+  document.getElementById('ov-confirm').classList.remove('hidden');
+}
+
+function confirmDelProc(procId) {
+  document.getElementById('confirm-msg').textContent = 'Delete this proceeding? This cannot be undone.';
+  document.getElementById('confirm-ok').onclick = () => {
+    const all = load();
+    const i = all.findIndex(x=>x.id===currentCaseId);
+    if (i>-1) all[i].proceedings = (all[i].proceedings||[]).filter(p=>p.id!==procId);
+    save(all);
+    closeConfirm();
+    toast('Proceeding deleted');
+    renderDetail();
+  };
+  document.getElementById('confirm-cancel').onclick = closeConfirm;
+  document.getElementById('ov-confirm').classList.remove('hidden');
+}
+
+function closeConfirm() {
+  document.getElementById('ov-confirm').classList.add('hidden');
+}
+
+// ════════════════════════════════════
+// TOAST
+// ════════════════════════════════════
+let _toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(()=>el.classList.remove('show'), 2600);
+}
+
+// ════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (!document.getElementById('ov-case').classList.contains('hidden')) closeCaseModal();
+    else if (!document.getElementById('ov-proc').classList.contains('hidden')) closeProcModal();
+    else if (!document.getElementById('ov-confirm').classList.contains('hidden')) closeConfirm();
+  }
+});
+
+// ════════════════════════════════════
+// INIT
+// ════════════════════════════════════
+renderDashboard();
+</script>
+</body>
+</html>

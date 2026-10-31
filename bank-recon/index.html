@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bank Reconciliation Pro</title>
+<meta name="description" content="Automatically match bank statements against your ledger with confidence-scored matching, visual analytics and Excel/CSV export. Runs entirely in your browser.">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="/toolbox.css">
+<script src="/toolbox.js" data-tool="Bank Reconciliation" defer></script>
+
+<!-- SheetJS for Excel parsing (single CDN dependency for .xlsx support) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+        --primary: #4f46e5;
+        --primary-dark: #4338ca;
+        --primary-light: #eef2ff;
+        --success: #10b981;
+        --success-light: #d1fae5;
+        --warning: #f59e0b;
+        --warning-light: #fef3c7;
+        --danger: #ef4444;
+        --danger-light: #fee2e2;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-500: #6b7280;
+        --gray-700: #374151;
+        --gray-900: #111827;
+        --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+        --shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06);
+        --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+        background: #f1f5f9;
+        color: var(--gray-900);
+        line-height: 1.5;
+        min-height: 100vh;
+    }
+
+    /* ===========================================================
+       Header
+    =========================================================== */
+    header {
+        background: linear-gradient(135deg, #1e1b4b 0%, #4f46e5 50%, #7c3aed 100%);
+        color: #fff;
+        padding: 32px 40px;
+        box-shadow: var(--shadow-lg);
+        position: relative;
+        overflow: hidden;
+    }
+
+    header::before {
+        content: "";
+        position: absolute;
+        top: -50%; right: -10%;
+        width: 500px; height: 500px;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+
+    header .header-content {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        max-width: 1400px;
+        margin: 0 auto;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        letter-spacing: -0.5px;
+    }
+
+    header p {
+        font-size: 14px;
+        opacity: 0.9;
+    }
+
+    .header-badge {
+        background: rgba(255,255,255,0.15);
+        backdrop-filter: blur(10px);
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    /* ===========================================================
+       Container & Cards
+    =========================================================== */
+    .container {
+        max-width: 1400px;
+        margin: -20px auto 40px;
+        padding: 0 24px;
+        position: relative;
+    }
+
+    .card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        padding: 28px;
+        margin-bottom: 24px;
+        border: 1px solid var(--gray-100);
+    }
+
+    .card h2 {
+        font-size: 17px;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 20px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--gray-100);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .card h2 .icon {
+        width: 32px; height: 32px;
+        background: var(--primary-light);
+        color: var(--primary);
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+    }
+
+    /* ===========================================================
+       Actions
+    =========================================================== */
+    .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .upload-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 180px;
+    }
+
+    .upload-group .file-name {
+        font-size: 12px;
+        color: var(--gray-500);
+        min-height: 16px;
+        padding-left: 4px;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 11px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        box-shadow: var(--shadow-sm);
+        white-space: nowrap;
+    }
+
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: #059669; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-secondary { background: #fff; color: var(--gray-700); border: 1px solid var(--gray-200); }
+    .btn-secondary:hover { background: var(--gray-50); transform: translateY(-1px); }
+    .btn-export {
+        background: #fff;
+        color: var(--primary);
+        border: 1px solid var(--primary);
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+    .btn-export:hover { background: var(--primary-light); }
+    .btn:disabled { background: var(--gray-200); color: var(--gray-500); cursor: not-allowed; transform: none !important; box-shadow: none; }
+
+    input[type="file"] { display: none; }
+
+    .sample-info {
+        font-size: 13px;
+        color: var(--gray-700);
+        margin-top: 16px;
+        padding: 14px 16px;
+        background: var(--primary-light);
+        border-left: 3px solid var(--primary);
+        border-radius: 6px;
+        line-height: 1.6;
+    }
+
+    .sample-info code {
+        background: #fff;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-family: "SF Mono", "Monaco", "Courier New", monospace;
+        font-size: 12px;
+        color: var(--primary);
+        border: 1px solid var(--gray-200);
+    }
+
+    /* ===========================================================
+       Summary Cards
+    =========================================================== */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+
+    .summary-card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--gray-100);
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .summary-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .summary-card::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0;
+        width: 4px; height: 100%;
+        background: var(--primary);
+    }
+
+    .summary-card.matched::before { background: var(--success); }
+    .summary-card.unmatched-bank::before { background: var(--warning); }
+    .summary-card.unmatched-ledger::before { background: var(--danger); }
+
+    .summary-card .card-icon {
+        position: absolute;
+        top: 16px; right: 16px;
+        width: 36px; height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        background: var(--primary-light);
+        color: var(--primary);
+    }
+    .summary-card.matched .card-icon { background: var(--success-light); color: var(--success); }
+    .summary-card.unmatched-bank .card-icon { background: var(--warning-light); color: var(--warning); }
+    .summary-card.unmatched-ledger .card-icon { background: var(--danger-light); color: var(--danger); }
+
+    .summary-card .label {
+        font-size: 12px;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+
+    .summary-card .value {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--gray-900);
+        letter-spacing: -1px;
+    }
+
+    .summary-card .sub {
+        font-size: 12px;
+        color: var(--gray-500);
+        margin-top: 4px;
+    }
+
+    /* ===========================================================
+       Charts
+    =========================================================== */
+    .charts-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+        .charts-grid { grid-template-columns: 1fr; }
+    }
+
+    .chart-container {
+        background: #fff;
+        border-radius: 10px;
+        padding: 20px;
+        border: 1px solid var(--gray-100);
+    }
+
+    .chart-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .chart-title .chart-value {
+        font-size: 12px;
+        color: var(--gray-500);
+        font-weight: 400;
+    }
+
+    .chart-svg { width: 100%; height: auto; display: block; }
+
+    .chart-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 12px;
+        justify-content: center;
+        font-size: 12px;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: 6px; color: var(--gray-700); }
+    .legend-swatch { width: 12px; height: 12px; border-radius: 3px; }
+
+    /* ===========================================================
+       Tables
+    =========================================================== */
+    .table-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .search-input {
+        padding: 8px 14px;
+        border: 1px solid var(--gray-200);
+        border-radius: 6px;
+        font-size: 13px;
+        width: 260px;
+        max-width: 100%;
+        outline: none;
+        transition: border-color 0.15s;
+    }
+
+    .search-input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .export-group { display: flex; gap: 8px; }
+
+    .table-wrapper {
+        overflow-x: auto;
+        border-radius: 8px;
+        border: 1px solid var(--gray-200);
+        background: #fff;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead { background: var(--gray-50); }
+    thead th {
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+        color: var(--gray-700);
+        border-bottom: 1px solid var(--gray-200);
+        white-space: nowrap;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    tbody td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--gray-100);
+        color: var(--gray-700);
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: var(--gray-50); }
+
+    .high-confidence { background: rgba(16, 185, 129, 0.08) !important; }
+    .medium-confidence { background: rgba(245, 158, 11, 0.08) !important; }
+    .low-confidence { background: rgba(239, 68, 68, 0.08) !important; }
+    .high-confidence:hover { background: rgba(16, 185, 129, 0.15) !important; }
+    .medium-confidence:hover { background: rgba(245, 158, 11, 0.15) !important; }
+    .low-confidence:hover { background: rgba(239, 68, 68, 0.15) !important; }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .badge-high { background: var(--success-light); color: #065f46; }
+    .badge-medium { background: var(--warning-light); color: #92400e; }
+    .badge-low { background: var(--danger-light); color: #991b1b; }
+
+    .amount {
+        text-align: right;
+        font-family: "SF Mono", "Monaco", "Courier New", monospace;
+        font-weight: 500;
+    }
+    .amount.positive { color: var(--success); }
+    .amount.negative { color: var(--danger); }
+
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        color: var(--gray-500);
+        font-size: 14px;
+    }
+    .empty-state .emoji { font-size: 40px; display: block; margin-bottom: 10px; }
+
+    /* ===========================================================
+       Status messages
+    =========================================================== */
+    .status {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        font-size: 13px;
+        display: none;
+        align-items: center;
+        gap: 10px;
+    }
+    .status.success { background: var(--success-light); color: #065f46; border: 1px solid #a7f3d0; display: flex; }
+    .status.error { background: var(--danger-light); color: #991b1b; border: 1px solid #fecaca; display: flex; }
+    .status.info { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; display: flex; }
+
+    /* ===========================================================
+       Tabs
+    =========================================================== */
+    .tab-bar {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid var(--gray-100);
+        overflow-x: auto;
+    }
+
+    .tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--gray-500);
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.15s ease;
+        white-space: nowrap;
+    }
+
+    .tab:hover { color: var(--primary); }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .tab .count {
+        background: var(--gray-100);
+        color: var(--gray-700);
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        margin-left: 6px;
+        font-weight: 600;
+    }
+    .tab.active .count { background: var(--primary); color: #fff; }
+
+    footer {
+        text-align: center;
+        padding: 24px;
+        color: var(--gray-500);
+        font-size: 12px;
+    }
+
+    @media (max-width: 768px) {
+        header { padding: 24px 20px; }
+        header h1 { font-size: 22px; }
+        .card { padding: 20px; }
+        .container { padding: 0 16px; }
+        .upload-group { min-width: 100%; }
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <div class="header-content">
+        <div>
+            <h1>🏦 Bank Reconciliation Pro</h1>
+            <p>Intelligent reconciliation with confidence scoring &amp; visual analytics</p>
+        </div>
+        <div class="header-badge">✨ Fully Offline · Privacy First</div>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- Upload Panel -->
+    <div class="card">
+        <h2><span class="icon">📤</span> Step 1 — Upload Files <i class="tb-i" data-help="Upload the bank statement (CSV/Excel from your bank portal) and the ledger (Cash/Bank book export from Tally or any accounting software). One side may use Debit &amp; Credit columns, the other a single signed Amount column — both are accepted.">i</i></h2>
+
+        <div id="status" class="status"></div>
+
+        <div class="actions">
+            <div class="upload-group">
+                <label for="bankFile" class="btn btn-primary">📄 Upload Bank File</label>
+                <input type="file" id="bankFile" accept=".csv,.xlsx,.xls" />
+                <span id="bankFileName" class="file-name">No file selected</span>
+            </div>
+
+            <div class="upload-group">
+                <label for="ledgerFile" class="btn btn-primary">📒 Upload Ledger File</label>
+                <input type="file" id="ledgerFile" accept=".csv,.xlsx,.xls" />
+                <span id="ledgerFileName" class="file-name">No file selected</span>
+            </div>
+
+            <div class="upload-group">
+                <button id="runReconBtn" class="btn btn-success" disabled>⚡ Run Reconciliation</button>
+                <span class="file-name">&nbsp;</span>
+            </div>
+
+            <div class="upload-group">
+                <button id="loadSampleBtn" class="btn btn-secondary">🧪 Load Sample Data</button>
+                <span class="file-name">&nbsp;</span>
+            </div>
+
+            <div class="upload-group">
+                <button id="resetBtn" class="btn btn-secondary">🔄 Reset</button>
+                <span class="file-name">&nbsp;</span>
+            </div>
+        </div>
+
+        <div class="sample-info">
+            <strong>Supported formats:</strong> <code>.csv</code> <code>.xlsx</code> <code>.xls</code> &nbsp;·&nbsp;
+            <strong>Required columns:</strong> <code>Date</code> + either <code>Amount</code> <em>or</em> <code>Debit</code> &amp; <code>Credit</code>
+            <br><strong>Optional columns:</strong> <code>Description</code> <code>Reference</code> &nbsp;·&nbsp; Dates accepted as YYYY-MM-DD, MM/DD/YYYY, or DD/MM/YYYY.
+            <br>💡 <em>Tip: Credit = money IN (positive), Debit = money OUT (negative). Click <strong>Load Sample Data</strong> to test instantly.</em>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div id="summarySection" style="display:none;">
+
+        <div class="card">
+            <h2><span class="icon">📊</span> Reconciliation Summary</h2>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="card-icon">🏦</div>
+                    <div class="label">Bank Transactions</div>
+                    <div class="value" id="totalBank">0</div>
+                    <div class="sub" id="totalBankAmount">$0.00</div>
+                    <div class="sub" id="totalBankDrCr" style="margin-top:2px; font-size:11px;"></div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon">📒</div>
+                    <div class="label">Ledger Entries</div>
+                    <div class="value" id="totalLedger">0</div>
+                    <div class="sub" id="totalLedgerAmount">$0.00</div>
+                    <div class="sub" id="totalLedgerDrCr" style="margin-top:2px; font-size:11px;"></div>
+                </div>
+                <div class="summary-card matched">
+                    <div class="card-icon">✅</div>
+                    <div class="label">Matched <i class="tb-i" data-help="Match rate = matched transactions ÷ total bank transactions. Check the Unmatched tabs for timing differences — cheques issued but not yet presented are normal.">i</i></div>
+                    <div class="value" id="totalMatched">0</div>
+                    <div class="sub" id="matchRate">0% match rate</div>
+                </div>
+                <div class="summary-card unmatched-bank">
+                    <div class="card-icon">⚠️</div>
+                    <div class="label">Unmatched Bank</div>
+                    <div class="value" id="totalUnmatchedBank">0</div>
+                    <div class="sub" id="unmatchedBankAmount">$0.00</div>
+                </div>
+                <div class="summary-card unmatched-ledger">
+                    <div class="card-icon">❌</div>
+                    <div class="label">Unmatched Ledger</div>
+                    <div class="value" id="totalUnmatchedLedger">0</div>
+                    <div class="sub" id="unmatchedLedgerAmount">$0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><span class="icon">📈</span> Visual Analytics</h2>
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <span>Match Status Distribution</span>
+                        <span class="chart-value" id="donutTotal">0 total</span>
+                    </div>
+                    <svg id="donutChart" class="chart-svg" viewBox="0 0 300 220"></svg>
+                    <div class="chart-legend" id="donutLegend"></div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <span>Confidence Score Breakdown</span>
+                        <span class="chart-value">Matched transactions</span>
+                    </div>
+                    <svg id="confidenceChart" class="chart-svg" viewBox="0 0 400 220"></svg>
+                    <div class="chart-legend">
+                        <div class="legend-item"><span class="legend-swatch" style="background:#10b981"></span>High (95-100%)</div>
+                        <div class="legend-item"><span class="legend-swatch" style="background:#f59e0b"></span>Medium (85-94%)</div>
+                        <div class="legend-item"><span class="legend-swatch" style="background:#ef4444"></span>Low (70-84%)</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <span>Amount Comparison</span>
+                        <span class="chart-value">Bank vs Ledger vs Matched</span>
+                    </div>
+                    <svg id="amountChart" class="chart-svg" viewBox="0 0 400 220"></svg>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <span>Daily Transaction Flow</span>
+                        <span class="chart-value">Matched over time</span>
+                    </div>
+                    <svg id="timelineChart" class="chart-svg" viewBox="0 0 400 220"></svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><span class="icon">📋</span> Detailed Results</h2>
+
+            <div class="tab-bar">
+                <button class="tab active" data-tab="matched">
+                    ✅ Matched <span class="count" id="countMatched">0</span>
+                </button>
+                <button class="tab" data-tab="unmatched-bank">
+                    🏦 Unmatched Bank <span class="count" id="countUnmatchedBank">0</span>
+                </button>
+                <button class="tab" data-tab="unmatched-ledger">
+                    📒 Unmatched Ledger <span class="count" id="countUnmatchedLedger">0</span>
+                </button>
+            </div>
+
+            <div class="tab-content active" id="tab-matched">
+                <div class="table-toolbar">
+                    <input type="text" class="search-input" id="searchMatched" placeholder="🔍 Search matched transactions..." />
+                    <div class="export-group">
+                        <button class="btn btn-export" id="exportMatchedCSV">📄 Export CSV</button>
+                        <button class="btn btn-export" id="exportMatchedXLSX">📊 Export Excel</button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table id="matchedTable">
+                        <thead>
+                            <tr>
+                                <th>Bank Date</th>
+                                <th>Ledger Date</th>
+                                <th>Debit</th>
+                                <th>Credit</th>
+                                <th>Bank Description</th>
+                                <th>Ledger Description</th>
+                                <th>Confidence <i class="tb-i" data-help="How sure the matcher is: 95–100% = same day and similar description; 85–94% = close date or partial description match; 70–84% = weak. Always eyeball medium and low matches before booking them.">i</i></th>
+                                <th>Match Type</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-unmatched-bank">
+                <div class="table-toolbar">
+                    <input type="text" class="search-input" id="searchUnmatchedBank" placeholder="🔍 Search unmatched bank..." />
+                    <div class="export-group">
+                        <button class="btn btn-export" id="exportUnmatchedBankCSV">📄 Export CSV</button>
+                        <button class="btn btn-export" id="exportUnmatchedBankXLSX">📊 Export Excel</button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table id="unmatchedBankTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Debit</th>
+                                <th>Credit</th>
+                                <th>Reference</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-unmatched-ledger">
+                <div class="table-toolbar">
+                    <input type="text" class="search-input" id="searchUnmatchedLedger" placeholder="🔍 Search unmatched ledger..." />
+                    <div class="export-group">
+                        <button class="btn btn-export" id="exportUnmatchedLedgerCSV">📄 Export CSV</button>
+                        <button class="btn btn-export" id="exportUnmatchedLedgerXLSX">📊 Export Excel</button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table id="unmatchedLedgerTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Debit</th>
+                                <th>Credit</th>
+                                <th>Reference</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-top:20px; text-align:right;">
+                <button class="btn btn-primary" id="exportAllXLSX">📦 Export Full Report (Excel)</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>Bank Reconciliation Pro · Runs entirely in your browser · No data leaves your device</footer>
+
+<script>
+/* ============================================================
+   GLOBAL STATE
+============================================================ */
+let bankTransactions = [];
+let ledgerEntries = [];
+let reconciliationResult = null;
+
+/* ============================================================
+   parseCSV(text) — in-browser CSV parser with quoted fields
+============================================================ */
+function parseCSV(text) {
+    text = text.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    const lines = text.split("\n").filter(l => l.trim() !== "");
+    if (lines.length < 2) throw new Error("CSV must have a header row and at least one data row.");
+
+    const parseLine = (line) => {
+        const result = [];
+        let current = "", inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (inQuotes) {
+                if (ch === '"' && line[i + 1] === '"') { current += '"'; i++; }
+                else if (ch === '"') inQuotes = false;
+                else current += ch;
+            } else {
+                if (ch === '"') inQuotes = true;
+                else if (ch === ",") { result.push(current); current = ""; }
+                else current += ch;
+            }
+        }
+        result.push(current);
+        return result.map(s => s.trim());
+    };
+
+    const headers = parseLine(lines[0]).map(h => h.toLowerCase());
+    const colIndex = mapColumns(headers);
+    validateColumns(colIndex);
+
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+        const cols = parseLine(lines[i]);
+        rows.push(buildRow(cols, colIndex));
+    }
+    return rows;
+}
+
+/* ============================================================
+   parseExcel(arrayBuffer) — uses SheetJS
+============================================================ */
+function parseExcel(arrayBuffer) {
+    const workbook = XLSX.read(arrayBuffer, { type: "array", cellDates: true });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: "" });
+    if (data.length < 2) throw new Error("Excel file must have a header row and at least one data row.");
+
+    const headers = data[0].map(h => String(h || "").toLowerCase());
+    const colIndex = mapColumns(headers);
+    validateColumns(colIndex);
+
+    const rows = [];
+    for (let i = 1; i < data.length; i++) {
+        const cols = data[i].map(c => (c === null || c === undefined) ? "" : String(c));
+        if (cols.every(c => c.trim() === "")) continue;
+        rows.push(buildRow(cols, colIndex));
+    }
+    return rows;
+}
+
+function mapColumns(headers) {
+    // Header-matching helpers. We look for common finance-industry column names.
+    const findExact = (candidates) => headers.findIndex(h => candidates.some(c => h === c || h === c + "s"));
+    const findIncludes = (substrings) => headers.findIndex(h => substrings.some(s => h.includes(s)));
+
+    return {
+        date: findIncludes(["date"]),
+        description: findIncludes(["desc", "memo", "narration", "particular"]),
+
+        // Amount column (optional if debit/credit provided)
+        amount: headers.findIndex(h =>
+            (h === "amount" || h === "amt" || h === "value" ||
+             h.includes("net amount") || h.includes("transaction amount"))
+            && !h.includes("debit") && !h.includes("credit")
+        ),
+
+        // Debit / Withdrawal / Payment / Outflow column
+        debit: headers.findIndex(h =>
+            h === "debit" || h === "dr" || h === "debits" ||
+            h.includes("withdraw") || h.includes("payment out") ||
+            h === "outflow" || h === "paid out" || h === "money out" ||
+            h === "debit amount" || h === "debit amt"
+        ),
+
+        // Credit / Deposit / Receipt / Inflow column
+        credit: headers.findIndex(h =>
+            h === "credit" || h === "cr" || h === "credits" ||
+            h.includes("deposit") || h.includes("payment in") ||
+            h === "inflow" || h === "paid in" || h === "money in" ||
+            h === "credit amount" || h === "credit amt" ||
+            h === "receipt" || h === "receipts"
+        ),
+
+        reference: headers.findIndex(h =>
+            h.includes("ref") || h.includes("id") ||
+            (h.includes("number") && !h.includes("account"))
+        )
+    };
+}
+
+// Either a single Amount column OR both Debit & Credit columns are acceptable
+function validateColumns(colIndex) {
+    if (colIndex.date === -1) {
+        throw new Error("File must contain a 'Date' column.");
+    }
+    const hasAmount = colIndex.amount !== -1;
+    const hasDebitCredit = colIndex.debit !== -1 || colIndex.credit !== -1;
+    if (!hasAmount && !hasDebitCredit) {
+        throw new Error("File must contain either an 'Amount' column OR 'Debit' and 'Credit' columns.");
+    }
+}
+
+function buildRow(cols, colIndex) {
+    return {
+        Date: cols[colIndex.date] || "",
+        Description: colIndex.description !== -1 ? (cols[colIndex.description] || "") : "",
+        Amount: colIndex.amount !== -1 ? (cols[colIndex.amount] || "") : "",
+        Debit: colIndex.debit !== -1 ? (cols[colIndex.debit] || "") : "",
+        Credit: colIndex.credit !== -1 ? (cols[colIndex.credit] || "") : "",
+        Reference: colIndex.reference !== -1 ? (cols[colIndex.reference] || "") : ""
+    };
+}
+
+/* ============================================================
+   normalizeData — clean & standardize rows
+   ------------------------------------------------------------
+   Converts raw CSV/Excel rows into a consistent internal format.
+   Amount resolution priority:
+     1. If Debit and/or Credit columns were provided, use them:
+        final amount = Credit - Debit   (Credit = money IN = +, Debit = money OUT = -)
+     2. Otherwise, fall back to the Amount column.
+   This lets users upload bank statements in either format.
+============================================================ */
+function normalizeData(rows, prefix) {
+    // Helper that strips currency symbols / commas / parens and returns a positive number.
+    // Returns 0 for blank/invalid input.
+    const parseAmountString = (s) => {
+        if (s === null || s === undefined) return 0;
+        let str = String(s).trim();
+        if (str === "" || str === "-") return 0;
+        let isNegative = false;
+        if (str.startsWith("(") && str.endsWith(")")) { isNegative = true; str = str.slice(1, -1); }
+        if (str.startsWith("-")) { isNegative = true; str = str.slice(1); }
+        str = str.replace(/[$£€¥₹,\s]/g, "");
+        let n = parseFloat(str);
+        if (isNaN(n)) n = 0;
+        return isNegative ? -Math.abs(n) : n;
+    };
+
+    return rows.map((row, idx) => {
+        const dateObj = parseDate(row.Date);
+
+        // ---- Resolve amount ----
+        let amountNum;
+        let debitNum = 0, creditNum = 0;
+        const hasDebit = row.Debit !== undefined && String(row.Debit).trim() !== "";
+        const hasCredit = row.Credit !== undefined && String(row.Credit).trim() !== "";
+
+        if (hasDebit || hasCredit) {
+            // Debit/Credit mode: treat Credit as inflow (+) and Debit as outflow (-).
+            // Take absolute values in case the user already included signs.
+            debitNum = Math.abs(parseAmountString(row.Debit));
+            creditNum = Math.abs(parseAmountString(row.Credit));
+            amountNum = creditNum - debitNum;
+        } else {
+            // Amount mode: single signed column
+            amountNum = parseAmountString(row.Amount);
+            // Split the signed amount into debit/credit for display consistency
+            if (amountNum >= 0) creditNum = amountNum;
+            else debitNum = -amountNum;
+        }
+
+        const descNorm = String(row.Description || "")
+            .toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
+
+        return {
+            id: `${prefix}-${idx}`,
+            Date: row.Date,
+            Description: row.Description,
+            Reference: row.Reference,
+            Debit: debitNum,
+            Credit: creditNum,
+            dateObj, amountNum, descNorm,
+            matched: false
+        };
+    });
+}
+
+function parseDate(str) {
+    if (!str) return null;
+    if (str instanceof Date) return isNaN(str.getTime()) ? null : str;
+    str = String(str).trim();
+
+    let m = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+    if (m) return new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+
+    m = str.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+    if (m) {
+        const a = parseInt(m[1]), b = parseInt(m[2]), y = parseInt(m[3]);
+        if (a > 12) return new Date(y, b - 1, a);
+        return new Date(y, a - 1, b);
+    }
+
+    const d = new Date(str);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+function stringSimilarity(a, b) {
+    if (!a || !b) return 0;
+    if (a === b) return 1;
+    const tokensA = new Set(a.split(" ").filter(t => t.length > 1));
+    const tokensB = new Set(b.split(" ").filter(t => t.length > 1));
+    if (tokensA.size === 0 || tokensB.size === 0) return 0;
+    let intersection = 0;
+    tokensA.forEach(t => { if (tokensB.has(t)) intersection++; });
+    const union = new Set([...tokensA, ...tokensB]).size;
+    const jaccard = intersection / union;
+    let containment = 0;
+    if (a.includes(b) || b.includes(a)) containment = 0.3;
+    return Math.min(1, jaccard + containment);
+}
+
+function daysBetween(d1, d2) {
+    if (!d1 || !d2) return Infinity;
+    return Math.floor(Math.abs(d1.getTime() - d2.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function calculateConfidence(bankTxn, ledgerTxn) {
+    const amountMatch = Math.abs(bankTxn.amountNum - ledgerTxn.amountNum) < 0.01;
+    if (!amountMatch) return { score: 0, matchType: "none", dayDiff: Infinity, descSim: 0 };
+
+    const dayDiff = daysBetween(bankTxn.dateObj, ledgerTxn.dateObj);
+    const descSim = stringSimilarity(bankTxn.descNorm, ledgerTxn.descNorm);
+
+    if (dayDiff > 3) return { score: 0, matchType: "none", dayDiff, descSim };
+
+    const refMatch = bankTxn.Reference && ledgerTxn.Reference &&
+                     bankTxn.Reference.trim().toLowerCase() === ledgerTxn.Reference.trim().toLowerCase();
+
+    let score = 0, matchType = "";
+    if (dayDiff === 0) {
+        score = 90 + Math.round(descSim * 10);
+        matchType = "Exact Match";
+        if (refMatch) score = Math.min(100, score + 5);
+    } else if (dayDiff <= 3) {
+        const datePenalty = dayDiff * 2;
+        score = 80 + Math.round(descSim * 15) - datePenalty;
+        if (refMatch) score = Math.min(100, score + 5);
+        matchType = score >= 85 ? "Close Match" : "Weak Match";
+    }
+
+    score = Math.max(0, Math.min(100, score));
+    if (score < 70) return { score: 0, matchType: "none", dayDiff, descSim };
+    return { score, matchType, dayDiff, descSim };
+}
+
+function matchTransactions(bank, ledger) {
+    bank.forEach(t => t.matched = false);
+    ledger.forEach(t => t.matched = false);
+
+    const candidates = [];
+    for (const b of bank) {
+        for (const l of ledger) {
+            const conf = calculateConfidence(b, l);
+            if (conf.score > 0) candidates.push({ bank: b, ledger: l, ...conf });
+        }
+    }
+    candidates.sort((a, b) => b.score - a.score);
+
+    const matched = [];
+    for (const cand of candidates) {
+        if (cand.bank.matched || cand.ledger.matched) continue;
+        cand.bank.matched = true;
+        cand.ledger.matched = true;
+        matched.push({
+            bankDate: formatDate(cand.bank.dateObj) || cand.bank.Date,
+            ledgerDate: formatDate(cand.ledger.dateObj) || cand.ledger.Date,
+            bankDateObj: cand.bank.dateObj,
+            amount: cand.bank.amountNum,
+            bankDescription: cand.bank.Description,
+            ledgerDescription: cand.ledger.Description,
+            bankReference: cand.bank.Reference,
+            ledgerReference: cand.ledger.Reference,
+            score: cand.score,
+            matchType: cand.matchType,
+            dayDiff: cand.dayDiff
+        });
+    }
+
+    return {
+        matched,
+        unmatchedBank: bank.filter(t => !t.matched),
+        unmatchedLedger: ledger.filter(t => !t.matched)
+    };
+}
+
+/* ============================================================
+   Formatting helpers
+============================================================ */
+function formatDate(d) {
+    if (!d || isNaN(d.getTime())) return "";
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+function formatAmount(n) {
+    const abs = Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return n < 0 ? `-$${abs}` : `$${abs}`;
+}
+
+function confidenceClass(score) {
+    if (score >= 95) return "high-confidence";
+    if (score >= 85) return "medium-confidence";
+    return "low-confidence";
+}
+
+function confidenceBadge(score) {
+    if (score >= 95) return `<span class="badge badge-high">${score}%</span>`;
+    if (score >= 85) return `<span class="badge badge-medium">${score}%</span>`;
+    return `<span class="badge badge-low">${score}%</span>`;
+}
+
+function escapeHtml(str) {
+    if (str == null) return "";
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
+
+function sumAmount(arr, key = "amountNum") {
+    return arr.reduce((s, t) => s + (t[key] || 0), 0);
+}
+
+/* ============================================================
+   CHART RENDERING (SVG, no dependencies)
+============================================================ */
+function renderDonutChart(matched, unmatchedBank, unmatchedLedger) {
+    const total = matched + unmatchedBank + unmatchedLedger;
+    const svg = document.getElementById("donutChart");
+    svg.innerHTML = "";
+    document.getElementById("donutTotal").textContent = `${total} total`;
+
+    if (total === 0) {
+        svg.innerHTML = '<text x="150" y="110" text-anchor="middle" fill="#9ca3af" font-size="14">No data</text>';
+        document.getElementById("donutLegend").innerHTML = "";
+        return;
+    }
+
+    const cx = 150, cy = 110, r = 75, innerR = 50;
+    const data = [
+        { label: "Matched", value: matched, color: "#10b981" },
+        { label: "Unmatched Bank", value: unmatchedBank, color: "#f59e0b" },
+        { label: "Unmatched Ledger", value: unmatchedLedger, color: "#ef4444" }
+    ].filter(d => d.value > 0);
+
+    let angle = -Math.PI / 2;
+    data.forEach(d => {
+        const slice = (d.value / total) * Math.PI * 2;
+        const endAngle = angle + slice;
+        const largeArc = slice > Math.PI ? 1 : 0;
+
+        const x1 = cx + r * Math.cos(angle);
+        const y1 = cy + r * Math.sin(angle);
+        const x2 = cx + r * Math.cos(endAngle);
+        const y2 = cy + r * Math.sin(endAngle);
+        const x3 = cx + innerR * Math.cos(endAngle);
+        const y3 = cy + innerR * Math.sin(endAngle);
+        const x4 = cx + innerR * Math.cos(angle);
+        const y4 = cy + innerR * Math.sin(angle);
+
+        const path = `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerR} ${innerR} 0 ${largeArc} 0 ${x4} ${y4} Z`;
+        svg.insertAdjacentHTML("beforeend",
+            `<path d="${path}" fill="${d.color}" stroke="#fff" stroke-width="2">
+                <title>${d.label}: ${d.value} (${Math.round(d.value/total*100)}%)</title>
+             </path>`);
+        angle = endAngle;
+    });
+
+    const matchPct = Math.round((matched / total) * 100);
+    svg.insertAdjacentHTML("beforeend",
+        `<text x="${cx}" y="${cy - 5}" text-anchor="middle" fill="#111827" font-size="24" font-weight="700">${matchPct}%</text>
+         <text x="${cx}" y="${cy + 15}" text-anchor="middle" fill="#6b7280" font-size="11">Match Rate</text>`);
+
+    document.getElementById("donutLegend").innerHTML = data.map(d =>
+        `<div class="legend-item"><span class="legend-swatch" style="background:${d.color}"></span>${d.label} (${d.value})</div>`
+    ).join("");
+}
+
+function renderConfidenceChart(matched) {
+    const svg = document.getElementById("confidenceChart");
+    svg.innerHTML = "";
+
+    const high = matched.filter(m => m.score >= 95).length;
+    const medium = matched.filter(m => m.score >= 85 && m.score < 95).length;
+    const low = matched.filter(m => m.score < 85).length;
+
+    const data = [
+        { label: "High", sub: "95-100%", value: high, color: "#10b981" },
+        { label: "Medium", sub: "85-94%", value: medium, color: "#f59e0b" },
+        { label: "Low", sub: "70-84%", value: low, color: "#ef4444" }
+    ];
+
+    const maxVal = Math.max(...data.map(d => d.value), 1);
+    const chartW = 400, chartH = 220;
+    const padding = { top: 20, right: 20, bottom: 50, left: 40 };
+    const barW = (chartW - padding.left - padding.right) / data.length - 20;
+    const plotH = chartH - padding.top - padding.bottom;
+
+    for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (plotH / 4) * i;
+        const val = Math.round(maxVal - (maxVal / 4) * i);
+        svg.insertAdjacentHTML("beforeend",
+            `<line x1="${padding.left}" y1="${y}" x2="${chartW - padding.right}" y2="${y}" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+             <text x="${padding.left - 8}" y="${y + 4}" text-anchor="end" fill="#6b7280" font-size="10">${val}</text>`);
+    }
+
+    data.forEach((d, i) => {
+        const x = padding.left + 15 + i * ((chartW - padding.left - padding.right) / data.length);
+        const h = (d.value / maxVal) * plotH;
+        const y = chartH - padding.bottom - h;
+
+        svg.insertAdjacentHTML("beforeend",
+            `<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="${d.color}" rx="4" opacity="0.9">
+                <title>${d.label} ${d.sub}: ${d.value}</title>
+             </rect>
+             <text x="${x + barW/2}" y="${y - 6}" text-anchor="middle" fill="#111827" font-size="12" font-weight="600">${d.value}</text>
+             <text x="${x + barW/2}" y="${chartH - padding.bottom + 18}" text-anchor="middle" fill="#374151" font-size="12" font-weight="600">${d.label}</text>
+             <text x="${x + barW/2}" y="${chartH - padding.bottom + 32}" text-anchor="middle" fill="#6b7280" font-size="10">${d.sub}</text>`);
+    });
+}
+
+function renderAmountChart(bankTotal, ledgerTotal, matchedTotal) {
+    const svg = document.getElementById("amountChart");
+    svg.innerHTML = "";
+
+    const data = [
+        { label: "Bank", value: Math.abs(bankTotal), raw: bankTotal, color: "#4f46e5" },
+        { label: "Ledger", value: Math.abs(ledgerTotal), raw: ledgerTotal, color: "#7c3aed" },
+        { label: "Matched", value: Math.abs(matchedTotal), raw: matchedTotal, color: "#10b981" }
+    ];
+
+    const maxVal = Math.max(...data.map(d => d.value), 1);
+    const chartW = 400, chartH = 220;
+    const padding = { top: 20, right: 20, bottom: 50, left: 60 };
+    const plotH = chartH - padding.top - padding.bottom;
+    const slotW = (chartW - padding.left - padding.right) / data.length;
+    const barW = slotW - 30;
+
+    for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (plotH / 4) * i;
+        const val = maxVal - (maxVal / 4) * i;
+        const label = val >= 1000 ? `$${(val/1000).toFixed(0)}k` : `$${val.toFixed(0)}`;
+        svg.insertAdjacentHTML("beforeend",
+            `<line x1="${padding.left}" y1="${y}" x2="${chartW - padding.right}" y2="${y}" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+             <text x="${padding.left - 8}" y="${y + 4}" text-anchor="end" fill="#6b7280" font-size="10">${label}</text>`);
+    }
+
+    data.forEach((d, i) => {
+        const x = padding.left + 15 + i * slotW;
+        const h = (d.value / maxVal) * plotH;
+        const y = chartH - padding.bottom - h;
+
+        svg.insertAdjacentHTML("beforeend",
+            `<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="${d.color}" rx="4">
+                <title>${d.label}: ${formatAmount(d.raw)}</title>
+             </rect>
+             <text x="${x + barW/2}" y="${y - 6}" text-anchor="middle" fill="#111827" font-size="11" font-weight="600">${formatAmount(d.raw)}</text>
+             <text x="${x + barW/2}" y="${chartH - padding.bottom + 20}" text-anchor="middle" fill="#374151" font-size="12" font-weight="600">${d.label}</text>`);
+    });
+}
+
+function renderTimelineChart(matched) {
+    const svg = document.getElementById("timelineChart");
+    svg.innerHTML = "";
+
+    const byDate = {};
+    matched.forEach(m => {
+        if (!m.bankDateObj) return;
+        const key = formatDate(m.bankDateObj);
+        if (!byDate[key]) byDate[key] = { date: m.bankDateObj, count: 0, amount: 0 };
+        byDate[key].count++;
+        byDate[key].amount += Math.abs(m.amount);
+    });
+
+    const points = Object.values(byDate).sort((a, b) => a.date - b.date);
+
+    const chartW = 400, chartH = 220;
+    const padding = { top: 20, right: 20, bottom: 40, left: 40 };
+    const plotW = chartW - padding.left - padding.right;
+    const plotH = chartH - padding.top - padding.bottom;
+
+    if (points.length === 0) {
+        svg.innerHTML = `<text x="${chartW/2}" y="${chartH/2}" text-anchor="middle" fill="#9ca3af" font-size="14">No matched data</text>`;
+        return;
+    }
+
+    const maxCount = Math.max(...points.map(p => p.count), 1);
+
+    for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (plotH / 4) * i;
+        const val = Math.round(maxCount - (maxCount / 4) * i);
+        svg.insertAdjacentHTML("beforeend",
+            `<line x1="${padding.left}" y1="${y}" x2="${chartW - padding.right}" y2="${y}" stroke="#e5e7eb" stroke-dasharray="3,3"/>
+             <text x="${padding.left - 8}" y="${y + 4}" text-anchor="end" fill="#6b7280" font-size="10">${val}</text>`);
+    }
+
+    const getX = (i) => padding.left + (points.length > 1 ? (plotW / (points.length - 1)) * i : plotW / 2);
+    const getY = (v) => padding.top + plotH - (v / maxCount) * plotH;
+
+    let areaPath = `M ${getX(0)} ${chartH - padding.bottom} `;
+    points.forEach((p, i) => { areaPath += `L ${getX(i)} ${getY(p.count)} `; });
+    areaPath += `L ${getX(points.length - 1)} ${chartH - padding.bottom} Z`;
+    svg.insertAdjacentHTML("beforeend", `<path d="${areaPath}" fill="#4f46e5" opacity="0.15"/>`);
+
+    let linePath = "";
+    points.forEach((p, i) => {
+        linePath += (i === 0 ? "M" : "L") + ` ${getX(i)} ${getY(p.count)} `;
+    });
+    svg.insertAdjacentHTML("beforeend",
+        `<path d="${linePath}" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`);
+
+    points.forEach((p, i) => {
+        svg.insertAdjacentHTML("beforeend",
+            `<circle cx="${getX(i)}" cy="${getY(p.count)}" r="4" fill="#4f46e5" stroke="#fff" stroke-width="2">
+                <title>${formatDate(p.date)}: ${p.count} matched (${formatAmount(p.amount)})</title>
+             </circle>`);
+    });
+
+    const labelIndices = points.length > 4
+        ? [0, Math.floor(points.length/3), Math.floor(2*points.length/3), points.length - 1]
+        : points.map((_, i) => i);
+    labelIndices.forEach(i => {
+        const p = points[i];
+        const label = `${p.date.getMonth()+1}/${p.date.getDate()}`;
+        svg.insertAdjacentHTML("beforeend",
+            `<text x="${getX(i)}" y="${chartH - padding.bottom + 16}" text-anchor="middle" fill="#6b7280" font-size="10">${label}</text>`);
+    });
+}
+
+/* ============================================================
+   RENDER RESULTS
+============================================================ */
+function renderResults(result) {
+    const { matched, unmatchedBank, unmatchedLedger } = result;
+    const totalBank = bankTransactions.length;
+    const totalLedger = ledgerEntries.length;
+
+    // Aggregate Dr/Cr totals (used in card sub-labels)
+    const bankDr = sumAmount(bankTransactions, "Debit");
+    const bankCr = sumAmount(bankTransactions, "Credit");
+    const ledgerDr = sumAmount(ledgerEntries, "Debit");
+    const ledgerCr = sumAmount(ledgerEntries, "Credit");
+
+    document.getElementById("totalBank").textContent = totalBank;
+    document.getElementById("totalBankAmount").textContent = `Net: ${formatAmount(sumAmount(bankTransactions))}`;
+    document.getElementById("totalBankDrCr").innerHTML =
+        `<span style="color:#ef4444">Dr: ${formatAmount(bankDr)}</span> · <span style="color:#10b981">Cr: ${formatAmount(bankCr)}</span>`;
+
+    document.getElementById("totalLedger").textContent = totalLedger;
+    document.getElementById("totalLedgerAmount").textContent = `Net: ${formatAmount(sumAmount(ledgerEntries))}`;
+    document.getElementById("totalLedgerDrCr").innerHTML =
+        `<span style="color:#ef4444">Dr: ${formatAmount(ledgerDr)}</span> · <span style="color:#10b981">Cr: ${formatAmount(ledgerCr)}</span>`;
+
+    document.getElementById("totalMatched").textContent = matched.length;
+    document.getElementById("totalUnmatchedBank").textContent = unmatchedBank.length;
+    document.getElementById("totalUnmatchedLedger").textContent = unmatchedLedger.length;
+    document.getElementById("unmatchedBankAmount").textContent = formatAmount(sumAmount(unmatchedBank));
+    document.getElementById("unmatchedLedgerAmount").textContent = formatAmount(sumAmount(unmatchedLedger));
+    document.getElementById("matchRate").textContent =
+        totalBank > 0 ? `${Math.round((matched.length / totalBank) * 100)}% of bank txns` : "0% match rate";
+
+    document.getElementById("countMatched").textContent = matched.length;
+    document.getElementById("countUnmatchedBank").textContent = unmatchedBank.length;
+    document.getElementById("countUnmatchedLedger").textContent = unmatchedLedger.length;
+
+    renderDonutChart(matched.length, unmatchedBank.length, unmatchedLedger.length);
+    renderConfidenceChart(matched);
+    renderAmountChart(sumAmount(bankTransactions), sumAmount(ledgerEntries), matched.reduce((s,m)=>s+m.amount,0));
+    renderTimelineChart(matched);
+
+    renderMatchedTable(matched);
+    renderUnmatchedTable("unmatchedBankTable", unmatchedBank);
+    renderUnmatchedTable("unmatchedLedgerTable", unmatchedLedger);
+
+    document.getElementById("summarySection").style.display = "block";
+}
+
+function renderMatchedTable(matched, filter = "") {
+    const body = document.querySelector("#matchedTable tbody");
+    const filtered = filter
+        ? matched.filter(m => (m.bankDescription + m.ledgerDescription + m.bankDate + m.amount).toLowerCase().includes(filter.toLowerCase()))
+        : matched;
+
+    if (filtered.length === 0) {
+        body.innerHTML = `<tr><td colspan="8"><div class="empty-state"><span class="emoji">🔍</span>No matches ${filter ? "for your search" : "found"}.</div></td></tr>`;
+        return;
+    }
+
+    // For each matched row:
+    //   Debit  = outflow (amount < 0), shown as its absolute value
+    //   Credit = inflow  (amount > 0)
+    body.innerHTML = filtered.map(m => {
+        const debit = m.amount < 0 ? Math.abs(m.amount) : 0;
+        const credit = m.amount >= 0 ? m.amount : 0;
+        return `
+        <tr class="${confidenceClass(m.score)}">
+            <td>${escapeHtml(m.bankDate)}</td>
+            <td>${escapeHtml(m.ledgerDate)}</td>
+            <td class="amount ${debit > 0 ? 'negative' : ''}">${debit > 0 ? formatAmount(debit) : "—"}</td>
+            <td class="amount ${credit > 0 ? 'positive' : ''}">${credit > 0 ? formatAmount(credit) : "—"}</td>
+            <td>${escapeHtml(m.bankDescription)}</td>
+            <td>${escapeHtml(m.ledgerDescription)}</td>
+            <td>${confidenceBadge(m.score)}</td>
+            <td>${escapeHtml(m.matchType)}${m.dayDiff > 0 ? ` (±${m.dayDiff}d)` : ""}</td>
+        </tr>`;
+    }).join("");
+}
+
+function renderUnmatchedTable(tableId, rows, filter = "") {
+    const body = document.querySelector(`#${tableId} tbody`);
+    const filtered = filter
+        ? rows.filter(r => (r.Description + r.Date + r.amountNum + r.Reference).toLowerCase().includes(filter.toLowerCase()))
+        : rows;
+
+    if (filtered.length === 0) {
+        body.innerHTML = `<tr><td colspan="5"><div class="empty-state"><span class="emoji">🎉</span>${filter ? "No matches for your search." : "All entries matched!"}</div></td></tr>`;
+        return;
+    }
+
+    body.innerHTML = filtered.map(t => {
+        const debit = t.Debit || 0;
+        const credit = t.Credit || 0;
+        return `
+        <tr>
+            <td>${escapeHtml(formatDate(t.dateObj) || t.Date)}</td>
+            <td>${escapeHtml(t.Description)}</td>
+            <td class="amount ${debit > 0 ? 'negative' : ''}">${debit > 0 ? formatAmount(debit) : "—"}</td>
+            <td class="amount ${credit > 0 ? 'positive' : ''}">${credit > 0 ? formatAmount(credit) : "—"}</td>
+            <td>${escapeHtml(t.Reference || "")}</td>
+        </tr>`;
+    }).join("");
+}
+
+/* ============================================================
+   EXPORT FUNCTIONS
+============================================================ */
+function toCSV(rows, headers) {
+    const escape = (v) => {
+        if (v === null || v === undefined) return "";
+        const s = String(v);
+        if (s.includes(",") || s.includes('"') || s.includes("\n")) return `"${s.replace(/"/g, '""')}"`;
+        return s;
+    };
+    const lines = [headers.join(",")];
+    rows.forEach(r => lines.push(headers.map(h => escape(r[h])).join(",")));
+    return lines.join("\n");
+}
+
+function downloadBlob(content, filename, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function exportMatchedCSV() {
+    if (!reconciliationResult || reconciliationResult.matched.length === 0) {
+        showStatus("No matched data to export.", "error");
+        return;
+    }
+    const rows = reconciliationResult.matched.map(m => {
+        const debit = m.amount < 0 ? Math.abs(m.amount) : 0;
+        const credit = m.amount >= 0 ? m.amount : 0;
+        return {
+            "Bank Date": m.bankDate,
+            "Ledger Date": m.ledgerDate,
+            "Debit": debit.toFixed(2),
+            "Credit": credit.toFixed(2),
+            "Net Amount": m.amount.toFixed(2),
+            "Bank Description": m.bankDescription,
+            "Ledger Description": m.ledgerDescription,
+            "Bank Reference": m.bankReference || "",
+            "Ledger Reference": m.ledgerReference || "",
+            "Confidence Score": m.score,
+            "Match Type": m.matchType,
+            "Day Difference": m.dayDiff
+        };
+    });
+    const headers = ["Bank Date","Ledger Date","Debit","Credit","Net Amount","Bank Description","Ledger Description","Bank Reference","Ledger Reference","Confidence Score","Match Type","Day Difference"];
+    downloadBlob(toCSV(rows, headers), "matched_transactions.csv", "text/csv");
+    showStatus("✅ Matched transactions exported to CSV.", "success");
+}
+
+function exportUnmatchedCSV(type) {
+    if (!reconciliationResult) return;
+    const source = type === "bank" ? reconciliationResult.unmatchedBank : reconciliationResult.unmatchedLedger;
+    if (source.length === 0) {
+        showStatus(`No unmatched ${type} data to export.`, "error");
+        return;
+    }
+    const rows = source.map(t => ({
+        "Date": formatDate(t.dateObj) || t.Date,
+        "Description": t.Description,
+        "Debit": (t.Debit || 0).toFixed(2),
+        "Credit": (t.Credit || 0).toFixed(2),
+        "Net Amount": t.amountNum.toFixed(2),
+        "Reference": t.Reference || ""
+    }));
+    const headers = ["Date", "Description", "Debit", "Credit", "Net Amount", "Reference"];
+    downloadBlob(toCSV(rows, headers), `unmatched_${type}.csv`, "text/csv");
+    showStatus(`✅ Unmatched ${type} exported to CSV.`, "success");
+}
+
+function exportMatchedXLSX() {
+    if (!reconciliationResult || reconciliationResult.matched.length === 0) {
+        showStatus("No matched data to export.", "error");
+        return;
+    }
+    const rows = reconciliationResult.matched.map(m => {
+        const debit = m.amount < 0 ? Math.abs(m.amount) : 0;
+        const credit = m.amount >= 0 ? m.amount : 0;
+        return {
+            "Bank Date": m.bankDate,
+            "Ledger Date": m.ledgerDate,
+            "Debit": debit,
+            "Credit": credit,
+            "Net Amount": m.amount,
+            "Bank Description": m.bankDescription,
+            "Ledger Description": m.ledgerDescription,
+            "Bank Reference": m.bankReference || "",
+            "Ledger Reference": m.ledgerReference || "",
+            "Confidence Score": m.score,
+            "Match Type": m.matchType,
+            "Day Difference": m.dayDiff
+        };
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Matched");
+    XLSX.writeFile(wb, "matched_transactions.xlsx");
+    showStatus("✅ Matched transactions exported to Excel.", "success");
+}
+
+function exportUnmatchedXLSX(type) {
+    if (!reconciliationResult) return;
+    const source = type === "bank" ? reconciliationResult.unmatchedBank : reconciliationResult.unmatchedLedger;
+    if (source.length === 0) {
+        showStatus(`No unmatched ${type} data to export.`, "error");
+        return;
+    }
+    const rows = source.map(t => ({
+        "Date": formatDate(t.dateObj) || t.Date,
+        "Description": t.Description,
+        "Debit": t.Debit || 0,
+        "Credit": t.Credit || 0,
+        "Net Amount": t.amountNum,
+        "Reference": t.Reference || ""
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `Unmatched ${type === "bank" ? "Bank" : "Ledger"}`);
+    XLSX.writeFile(wb, `unmatched_${type}.xlsx`);
+    showStatus(`✅ Unmatched ${type} exported to Excel.`, "success");
+}
+
+function exportFullReport() {
+    if (!reconciliationResult) {
+        showStatus("Run reconciliation before exporting.", "error");
+        return;
+    }
+    const { matched, unmatchedBank, unmatchedLedger } = reconciliationResult;
+
+    // --- Summary sheet with Debit/Credit breakdowns ---
+    const bankDr = sumAmount(bankTransactions, "Debit");
+    const bankCr = sumAmount(bankTransactions, "Credit");
+    const ledgerDr = sumAmount(ledgerEntries, "Debit");
+    const ledgerCr = sumAmount(ledgerEntries, "Credit");
+    const unmatchedBankDr = sumAmount(unmatchedBank, "Debit");
+    const unmatchedBankCr = sumAmount(unmatchedBank, "Credit");
+    const unmatchedLedgerDr = sumAmount(unmatchedLedger, "Debit");
+    const unmatchedLedgerCr = sumAmount(unmatchedLedger, "Credit");
+
+    const summaryRows = [
+        { Metric: "Total Bank Transactions", Value: bankTransactions.length },
+        { Metric: "Total Ledger Entries", Value: ledgerEntries.length },
+        { Metric: "Matched Transactions", Value: matched.length },
+        { Metric: "Unmatched Bank", Value: unmatchedBank.length },
+        { Metric: "Unmatched Ledger", Value: unmatchedLedger.length },
+        { Metric: "Match Rate %", Value: bankTransactions.length > 0 ? Math.round(matched.length / bankTransactions.length * 100) : 0 },
+        { Metric: "---", Value: "---" },
+        { Metric: "Bank Total Debit", Value: bankDr.toFixed(2) },
+        { Metric: "Bank Total Credit", Value: bankCr.toFixed(2) },
+        { Metric: "Bank Net Amount", Value: sumAmount(bankTransactions).toFixed(2) },
+        { Metric: "Ledger Total Debit", Value: ledgerDr.toFixed(2) },
+        { Metric: "Ledger Total Credit", Value: ledgerCr.toFixed(2) },
+        { Metric: "Ledger Net Amount", Value: sumAmount(ledgerEntries).toFixed(2) },
+        { Metric: "---", Value: "---" },
+        { Metric: "Matched Net Amount", Value: matched.reduce((s, m) => s + m.amount, 0).toFixed(2) },
+        { Metric: "Unmatched Bank Debit", Value: unmatchedBankDr.toFixed(2) },
+        { Metric: "Unmatched Bank Credit", Value: unmatchedBankCr.toFixed(2) },
+        { Metric: "Unmatched Bank Net Amount", Value: sumAmount(unmatchedBank).toFixed(2) },
+        { Metric: "Unmatched Ledger Debit", Value: unmatchedLedgerDr.toFixed(2) },
+        { Metric: "Unmatched Ledger Credit", Value: unmatchedLedgerCr.toFixed(2) },
+        { Metric: "Unmatched Ledger Net Amount", Value: sumAmount(unmatchedLedger).toFixed(2) },
+        { Metric: "---", Value: "---" },
+        { Metric: "Report Generated", Value: new Date().toLocaleString() }
+    ];
+
+    // --- Matched sheet ---
+    const matchedRows = matched.map(m => {
+        const debit = m.amount < 0 ? Math.abs(m.amount) : 0;
+        const credit = m.amount >= 0 ? m.amount : 0;
+        return {
+            "Bank Date": m.bankDate,
+            "Ledger Date": m.ledgerDate,
+            "Debit": debit,
+            "Credit": credit,
+            "Net Amount": m.amount,
+            "Bank Description": m.bankDescription,
+            "Ledger Description": m.ledgerDescription,
+            "Bank Reference": m.bankReference || "",
+            "Ledger Reference": m.ledgerReference || "",
+            "Confidence Score": m.score,
+            "Match Type": m.matchType,
+            "Day Difference": m.dayDiff
+        };
+    });
+
+    // --- Unmatched sheets ---
+    const toUnmatchedRows = (arr) => arr.map(t => ({
+        "Date": formatDate(t.dateObj) || t.Date,
+        "Description": t.Description,
+        "Debit": t.Debit || 0,
+        "Credit": t.Credit || 0,
+        "Net Amount": t.amountNum,
+        "Reference": t.Reference || ""
+    }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), "Summary");
+    if (matchedRows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(matchedRows), "Matched");
+    if (unmatchedBank.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(toUnmatchedRows(unmatchedBank)), "Unmatched Bank");
+    if (unmatchedLedger.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(toUnmatchedRows(unmatchedLedger)), "Unmatched Ledger");
+    XLSX.writeFile(wb, `reconciliation_report_${new Date().toISOString().slice(0,10)}.xlsx`);
+    showStatus("✅ Full report exported to Excel.", "success");
+}
+
+/* ============================================================
+   STATUS & FILE HELPERS
+============================================================ */
+function showStatus(msg, type = "info") {
+    const el = document.getElementById("status");
+    el.className = `status ${type}`;
+    el.textContent = msg;
+}
+function clearStatus() {
+    document.getElementById("status").className = "status";
+    document.getElementById("status").textContent = "";
+}
+function updateRunButton() {
+    document.getElementById("runReconBtn").disabled = !(bankTransactions.length > 0 && ledgerEntries.length > 0);
+}
+
+function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = e => resolve(e.target.result);
+        r.onerror = reject;
+        r.readAsText(file);
+    });
+}
+function readFileAsArrayBuffer(file) {
+    return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = e => resolve(e.target.result);
+        r.onerror = reject;
+        r.readAsArrayBuffer(file);
+    });
+}
+
+async function handleFileUpload(file, target) {
+    const ext = file.name.split(".").pop().toLowerCase();
+    let rows;
+    if (ext === "csv") {
+        rows = parseCSV(await readFileAsText(file));
+    } else if (ext === "xlsx" || ext === "xls") {
+        if (typeof XLSX === "undefined") throw new Error("Excel library failed to load. Check your internet connection.");
+        rows = parseExcel(await readFileAsArrayBuffer(file));
+    } else {
+        throw new Error(`Unsupported file format: .${ext}`);
+    }
+    return normalizeData(rows, target === "bank" ? "B" : "L");
+}
+
+/* ============================================================
+   EVENT HANDLERS
+============================================================ */
+document.getElementById("bankFile").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+        bankTransactions = await handleFileUpload(file, "bank");
+        document.getElementById("bankFileName").textContent = `✓ ${file.name} (${bankTransactions.length} rows)`;
+        showStatus(`Loaded ${bankTransactions.length} bank transactions.`, "success");
+        updateRunButton();
+    } catch (err) {
+        showStatus(`Error: ${err.message}`, "error");
+        document.getElementById("bankFileName").textContent = "Error loading file";
+    }
+});
+
+document.getElementById("ledgerFile").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+        ledgerEntries = await handleFileUpload(file, "ledger");
+        document.getElementById("ledgerFileName").textContent = `✓ ${file.name} (${ledgerEntries.length} rows)`;
+        showStatus(`Loaded ${ledgerEntries.length} ledger entries.`, "success");
+        updateRunButton();
+    } catch (err) {
+        showStatus(`Error: ${err.message}`, "error");
+        document.getElementById("ledgerFileName").textContent = "Error loading file";
+    }
+});
+
+document.getElementById("runReconBtn").addEventListener("click", () => {
+    if (bankTransactions.length === 0 || ledgerEntries.length === 0) return;
+    try {
+        reconciliationResult = matchTransactions(bankTransactions, ledgerEntries);
+        renderResults(reconciliationResult);
+        showStatus(`✅ Reconciliation complete — ${reconciliationResult.matched.length} matched, ` +
+                   `${reconciliationResult.unmatchedBank.length} unmatched bank, ` +
+                   `${reconciliationResult.unmatchedLedger.length} unmatched ledger.`, "success");
+        document.getElementById("summarySection").scrollIntoView({ behavior: "smooth" });
+    } catch (err) {
+        showStatus(`Error: ${err.message}`, "error");
+    }
+});
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+    bankTransactions = [];
+    ledgerEntries = [];
+    reconciliationResult = null;
+    document.getElementById("bankFile").value = "";
+    document.getElementById("ledgerFile").value = "";
+    document.getElementById("bankFileName").textContent = "No file selected";
+    document.getElementById("ledgerFileName").textContent = "No file selected";
+    document.getElementById("summarySection").style.display = "none";
+    clearStatus();
+    updateRunButton();
+});
+
+document.getElementById("loadSampleBtn").addEventListener("click", () => {
+    // Bank sample uses classic Debit/Credit column format (common for bank statements)
+    const sampleBank = `Date,Description,Debit,Credit,Reference
+2025-01-03,ACME CORP PAYMENT,,1500.00,INV-1001
+2025-01-05,Office Depot Purchase,234.56,,POS-9821
+2025-01-08,Stripe Payout,,4892.30,STR-44521
+2025-01-10,AWS Cloud Services,189.99,,AWS-J2025
+2025-01-12,Client XYZ Wire Transfer,,12500.00,WIRE-7781
+2025-01-15,Google Workspace Subscription,45.00,,GW-MO-115
+2025-01-17,Refund - Acme Corp,150.00,,RFD-001
+2025-01-20,Payroll Run January,15000.00,,PR-2025-01
+2025-01-22,Interest Earned,,12.45,
+2025-01-25,Unknown Wire Deposit,,500.00,
+2025-01-28,Office Rent Payment,3200.00,,RENT-JAN`;
+
+    // Ledger sample uses single signed Amount column (common for accounting systems)
+    const sampleLedger = `Date,Description,Amount,Reference
+2025-01-03,Acme Corporation - Invoice 1001,1500.00,INV-1001
+2025-01-06,Office Depot - Supplies,-234.56,PO-9821
+2025-01-08,Stripe Payment Processor Payout,4892.30,STR-44521
+2025-01-10,Amazon Web Services,-189.99,AWS-J2025
+2025-01-12,XYZ Industries Payment,12500.00,WIRE-7781
+2025-01-15,Google Workspace,-45.00,GW-MO-115
+2025-01-20,Salaries Paid - January 2025,-15000.00,PR-2025-01
+2025-01-28,Monthly Office Rent,-3200.00,RENT-JAN
+2025-01-30,Adjustment Entry,-75.00,ADJ-005
+2025-02-02,Pending Vendor Invoice,-820.00,VND-3344`;
+
+    try {
+        bankTransactions = normalizeData(parseCSV(sampleBank), "B");
+        ledgerEntries = normalizeData(parseCSV(sampleLedger), "L");
+        document.getElementById("bankFileName").textContent = `✓ sample_bank.csv (Dr/Cr format, ${bankTransactions.length} rows)`;
+        document.getElementById("ledgerFileName").textContent = `✓ sample_ledger.csv (Amount format, ${ledgerEntries.length} rows)`;
+        showStatus("✓ Sample data loaded — bank uses Debit/Credit, ledger uses Amount. Click 'Run Reconciliation' to test.", "info");
+        updateRunButton();
+    } catch (err) {
+        showStatus(`Failed to load sample data: ${err.message}`, "error");
+    }
+});
+
+/* Tabs */
+document.querySelectorAll(".tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById(`tab-${tab.dataset.tab}`).classList.add("active");
+    });
+});
+
+/* Search filters */
+document.getElementById("searchMatched").addEventListener("input", (e) => {
+    if (reconciliationResult) renderMatchedTable(reconciliationResult.matched, e.target.value);
+});
+document.getElementById("searchUnmatchedBank").addEventListener("input", (e) => {
+    if (reconciliationResult) renderUnmatchedTable("unmatchedBankTable", reconciliationResult.unmatchedBank, e.target.value);
+});
+document.getElementById("searchUnmatchedLedger").addEventListener("input", (e) => {
+    if (reconciliationResult) renderUnmatchedTable("unmatchedLedgerTable", reconciliationResult.unmatchedLedger, e.target.value);
+});
+
+/* Export buttons */
+document.getElementById("exportMatchedCSV").addEventListener("click", exportMatchedCSV);
+document.getElementById("exportMatchedXLSX").addEventListener("click", exportMatchedXLSX);
+document.getElementById("exportUnmatchedBankCSV").addEventListener("click", () => exportUnmatchedCSV("bank"));
+document.getElementById("exportUnmatchedBankXLSX").addEventListener("click", () => exportUnmatchedXLSX("bank"));
+document.getElementById("exportUnmatchedLedgerCSV").addEventListener("click", () => exportUnmatchedCSV("ledger"));
+document.getElementById("exportUnmatchedLedgerXLSX").addEventListener("click", () => exportUnmatchedXLSX("ledger"));
+document.getElementById("exportAllXLSX").addEventListener("click", exportFullReport);
+</script>
+</body>
+</html>

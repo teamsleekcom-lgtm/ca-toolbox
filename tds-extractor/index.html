@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TDS Extractor – 26Q & 24Q</title>
+<meta name="description" content="Extract every transaction, challan and deductee detail from Form 26Q / 24Q FVU (.txt) and TRACES (.pdf) files into a clean, filterable Excel workbook. Runs entirely in your browser.">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="/toolbox.css">
+<script src="/toolbox.js" data-tool="TDS Extractor" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0d1f3c;--navy2:#1a3660;--navy3:#24487a;
+  --amber:#f59e0b;--amber2:#fbbf24;
+  --green:#059669;--green2:#d1fae5;--green3:#065f46;
+  --blue2:#dbeafe;--blue3:#1e40af;
+  --red2:#fee2e2;--red3:#991b1b;
+  --purple2:#ede9fe;--purple3:#5b21b6;
+  --slate:#64748b;--slate2:#f1f5f9;--slate3:#e2e8f0;--slate4:#334155;
+  --white:#ffffff;--bg:#eef2f7;
+}
+body{font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--navy);min-height:100vh}
+
+/* ── Topbar ── */
+.topbar{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 60%,var(--navy3) 100%);padding:16px 28px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 12px rgba(0,0,0,.25)}
+.topbar-icon{width:44px;height:44px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
+.topbar h1{font-size:1.15rem;font-weight:800;color:#fff;letter-spacing:.01em}
+.topbar p{font-size:.77rem;color:rgba(255,255,255,.6);margin-top:2px}
+.topbar-badge{margin-left:auto;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.4);color:var(--amber2);padding:4px 12px;border-radius:99px;font-size:.72rem;font-weight:700;white-space:nowrap}
+
+.wrap{max-width:1340px;margin:0 auto;padding:22px 18px}
+
+/* ── Cards ── */
+.card{background:var(--white);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:22px 24px;margin-bottom:18px}
+.card-title{font-size:.88rem;font-weight:700;color:var(--slate4);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* ── Upload ── */
+.drop-zone{border:2px dashed #93c5fd;border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;background:#eff6ff;transition:all .18s}
+.drop-zone:hover,.drop-zone.over{border-color:var(--navy2);background:#dbeafe}
+.drop-zone h3{font-size:.95rem;color:var(--blue3);margin:10px 0 5px;font-weight:700}
+.drop-zone p{font-size:.78rem;color:var(--slate);line-height:1.5}
+.drop-icon{font-size:2.6rem}
+.btn-browse{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:9px 18px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;transition:background .15s}
+.btn-browse:hover{background:var(--navy2)}
+
+/* ── File list ── */
+.file-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:1px solid var(--slate3);margin-top:10px;background:var(--slate2);transition:all .15s}
+.file-item .fname{font-size:.85rem;font-weight:600;color:var(--navy)}
+.file-item .fmeta{font-size:.74rem;color:var(--slate);margin-top:2px}
+
+/* ── Badges ── */
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.7rem;font-weight:700;letter-spacing:.02em}
+.bv{background:var(--green2);color:var(--green3)}
+.bp{background:var(--purple2);color:var(--purple3)}
+.by{background:#fef3c7;color:#78350f}
+.br{background:var(--red2);color:var(--red3)}
+.bb{background:var(--blue2);color:var(--blue3)}
+.bg{background:#f0fdf4;color:#166534}
+
+/* ── Stats ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.stat{background:var(--white);border-radius:12px;padding:15px 18px;box-shadow:0 1px 3px rgba(0,0,0,.07);border-top:3px solid var(--navy2)}
+.stat.g{border-top-color:var(--green)}
+.stat.a{border-top-color:var(--amber)}
+.stat.p{border-top-color:#8b5cf6}
+.sv{font-size:1.45rem;font-weight:800;color:var(--navy)}
+.sl{font-size:.72rem;color:var(--slate);margin-top:3px}
+
+/* ── Tabs ── */
+.tabs{display:flex;border-bottom:2px solid var(--slate3);margin-bottom:18px;gap:0}
+.tab{padding:9px 16px;font-size:.82rem;font-weight:700;color:var(--slate);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.tab:hover{color:var(--navy2)}
+.tab.active{color:var(--navy);border-bottom-color:var(--amber)}
+
+/* ── Table ── */
+.tw{overflow:auto;border-radius:10px;border:1px solid var(--slate3);max-height:440px}
+table{width:100%;border-collapse:collapse;font-size:.76rem}
+thead th{background:var(--navy);color:#fff;padding:9px 11px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:9;font-size:.7rem;font-weight:700;letter-spacing:.04em}
+thead th.num{text-align:right}
+tbody td{padding:7px 11px;border-bottom:1px solid var(--slate2);white-space:nowrap;color:var(--slate4)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#f8fafc}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+td.mono{font-family:'Consolas','Courier New',monospace;font-size:.74rem;letter-spacing:.03em}
+td.bold{font-weight:700}
+
+/* ── Actions ── */
+.action-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.btn-export{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;transition:background .15s}
+.btn-export:hover{background:var(--green3)}
+
+/* ── Chips ── */
+.sec{display:inline-block;padding:1px 6px;background:var(--purple2);color:var(--purple3);border-radius:5px;font-size:.68rem;font-weight:700;font-family:monospace}
+.rmk{display:inline-block;padding:1px 6px;background:#fef9c3;color:#713f12;border-radius:5px;font-size:.68rem;font-weight:700}
+
+.empty{text-align:center;padding:40px;color:#94a3b8}
+.empty .ei{font-size:2.2rem;margin-bottom:8px}
+.empty p{font-size:.82rem}
+.info-note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:9px 14px;font-size:.77rem;color:var(--blue3);margin-bottom:14px;line-height:1.5}
+.sub-head{font-size:.78rem;font-weight:700;color:var(--slate);margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em}
+.sep{height:1px;background:var(--slate3);margin:20px 0}
+@media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}.topbar-badge{display:none}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-icon">📊</div>
+  <div>
+    <h1>TDS Return Extractor</h1>
+    <p>Form 26Q &amp; 24Q · FVU (.txt) and TRACES (.pdf) · Full transaction detail extraction</p>
+  </div>
+  <div class="topbar-badge">CA Audit Tool</div>
+</div>
+
+<div class="wrap">
+
+  <!-- Upload -->
+  <div class="card">
+    <div class="card-title">📁 Upload TDS Return Files <i class="tb-i" data-help="FVU .txt files come from the NSDL FVU utility (RPU) when the return is prepared — they parse with full accuracy. PDFs downloaded from TRACES parse on a best-effort basis.">i</i></div>
+    <div class="drop-zone" id="dz">
+      <div class="drop-icon">☁️</div>
+      <h3>Drag &amp; Drop files here</h3>
+      <p>
+        <strong>FVU .txt files</strong> (NSDL FVU utility output) — most accurate<br>
+        <strong>TRACES .pdf downloads</strong> — best-effort extraction
+      </p>
+      <button class="btn-browse" onclick="event.stopPropagation();document.getElementById('fi').click()">📂 Browse Files</button>
+    </div>
+    <input type="file" id="fi" multiple accept=".txt,.pdf" style="display:none" onchange="handleFiles(this.files)">
+    <div id="fileList"></div>
+  </div>
+
+  <!-- Results -->
+  <div id="results" style="display:none">
+    <div class="stats">
+      <div class="stat"><div class="sv" id="s0">0</div><div class="sl">Files Processed</div></div>
+      <div class="stat g"><div class="sv" id="s1">0</div><div class="sl">Total Transactions</div></div>
+      <div class="stat p"><div class="sv" id="s2">0</div><div class="sl">Challans Found</div></div>
+      <div class="stat a"><div class="sv" id="s3">₹0</div><div class="sl">Total TDS Deducted</div></div>
+    </div>
+
+    <div class="card">
+      <div class="action-bar">
+        <div style="font-size:.88rem;font-weight:700;color:var(--navy)">📋 Extracted Data</div>
+        <button class="btn-export" onclick="exportXLS()">⬇️ Download Excel (.xlsx)</button>
+      </div>
+      <div class="tabs">
+        <button class="tab active" onclick="showTab('txn',this)">Transactions</button>
+        <button class="tab" onclick="showTab('chal',this)">Challans</button>
+        <button class="tab" onclick="showTab('ded',this)">Deductor Info</button>
+      </div>
+      <div id="pt"></div>
+      <div id="pc" style="display:none"></div>
+      <div id="pd" style="display:none"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── PDF.js ──────────────────────────────────────────────────────
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── State ───────────────────────────────────────────────────────
+const D = { ded:[], chal:[], txn:[], files:{} };
+
+// ── Lookup maps ─────────────────────────────────────────────────
+const SEC = {
+  '192':'Salary','192A':'PF Withdrawal (Acc. Balance)',
+  '193':'Interest on Securities','194':'Dividend',
+  '194A':'Interest (Other than Securities)',
+  '194B':'Lottery / Puzzle / Game Winnings',
+  '194BB':'Horse Race Winnings','194C':'Payment to Contractors',
+  '194D':'Insurance Commission','194DA':'Life Insurance Policy',
+  '194E':'Non-Resident Sportsmen / Entertainer',
+  '194EE':'NSS Withdrawals','194F':'MF Unit Repurchase',
+  '194G':'Commission on Lottery Tickets','194H':'Commission / Brokerage',
+  '194I':'Rent','194IA':'Rent – Immovable Property (Sec 194IA)',
+  '194IB':'Rent – Individual / HUF (Sec 194IB)',
+  '194IC':'Joint Development Agreement','194J':'Professional / Technical Fees',
+  '194JA':'Technical Services (Sec 194J)','194JB':'Professional Services (Sec 194J)',
+  '194K':'Income from Units','194LA':'Compensation – Immovable Property Acquisition',
+  '194LB':'Infrastructure Bond Interest','194LBA':'Business Trust Income',
+  '194LC':'Interest from Indian Company','194LD':'Interest on Bonds (FVCI/FPI)',
+  '194M':'Commission / Brokerage (Individual / HUF)','194N':'Cash Withdrawal',
+  '194O':'E-Commerce Operator','194P':'Senior Citizen – Simplified TDS',
+  '194Q':'Purchase of Goods','194R':'Benefit / Perquisite from Business',
+  '194S':'Transfer of Virtual Digital Asset (VDA)',
+  '195':'Payments to Non-Residents','196A':'Units – Non-Resident',
+  '196B':'Offshore Fund Units','196C':'Foreign Currency Bond Income',
+  '196D':'FII / FPI Securities Income',
+  '206AA':'Higher TDS – No PAN Furnished','206AB':'Higher TDS – Non-Filer of ITR',
+};
+const RMK = {
+  'A':'Deductee Not Traceable','B':'PAN Not Applied',
+  'C':'PAN Applied but Not Received',
+  'Y':'No Deduction – Income Below Threshold',
+  'Z':'Exempt Under Provisions of Act',
+  'T':'Transporter (No PAN, 44AE Declaration)',
+  'N':'Normal (Valid PAN Available)','P':'Existing Deductee / No Change',
+};
+const secDesc = c => SEC[(c||'').toUpperCase()] || c || '';
+const rmkDesc = c => RMK[(c||'').toUpperCase()] || c || '';
+
+// ── Utilities ───────────────────────────────────────────────────
+const fmtD = s => {
+  if(!s) return '';
+  const d = s.replace(/\D/g,'');
+  return d.length===8 ? `${d.slice(0,2)}/${d.slice(2,4)}/${d.slice(4)}` : s;
+};
+const toN = s => { const n=parseFloat((s||'').toString().replace(/,/g,'')); return isNaN(n)?0:n; };
+const fmtN = n => n===0?'':Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc = s => (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+// ── FVU Parser ──────────────────────────────────────────────────
+function parseFVU(text, fn) {
+  const lines = text.replace(/\r/g,'').split('\n');
+  const ded=[], chal=[], txn=[];
+  let ft='Unknown', bh=null, cd=null, cseq=0;
+
+  for(const raw of lines){
+    const ln=raw.trim(); if(!ln) continue;
+    const f=ln.split('|'); if(f[f.length-1]==='') f.pop();
+    const rt=(f[0]||'').trim().toUpperCase();
+
+    if(rt==='FH'){
+      const v=(f[2]||'').trim().replace(/\s/g,'').toUpperCase();
+      if(['26Q','24Q','27Q','27EQ'].includes(v)) ft=v;
+
+    } else if(rt==='BH'){
+      // Detect form type from BH if FH didn't set it
+      if(ft==='Unknown'){
+        for(const x of f){
+          const v=x.trim().replace(/\s/g,'').toUpperCase();
+          if(['26Q','24Q','27Q','27EQ'].includes(v)){ft=v;break;}
+        }
+      }
+      // Return type in fields 30-36
+      let retType='';
+      for(let i=30;i<Math.min(f.length,40);i++){
+        const v=(f[i]||'').trim().toUpperCase();
+        if(v==='O'){retType='Original';break;}
+        if(v==='C'){retType='Correction';break;}
+      }
+      bh={
+        ft,retType,fn,
+        tan:(f[1]||'').trim(), pan:(f[2]||'').trim(),
+        fy:(f[3]||'').trim(), qtr:(f[4]||'').trim(),
+        name:(f[5]||'').trim(), branch:(f[6]||'').trim(),
+        addr:[f[7],f[8],f[9],f[10],f[11]].map(x=>(x||'').trim()).filter(Boolean).join(', '),
+        stCode:(f[12]||'').trim(), pin:(f[13]||'').trim(),
+        email:(f[14]||'').trim(),
+        phone:[(f[15]||'').trim(),(f[16]||'').trim()].filter(Boolean).join('-'),
+        rPerson:(f[17]||'').trim(), rDesig:(f[18]||'').trim(), rPAN:(f[19]||'').trim(),
+      };
+      cseq=0;
+      ded.push({...bh});
+
+    } else if(rt==='CD'){
+      cseq++;
+      cd={
+        ft,fn,
+        tan:bh?.tan||'', dName:bh?.name||'', fy:bh?.fy||'', qtr:bh?.qtr||'',
+        srNo:(f[1]||'').trim()||String(cseq),
+        bsr:(f[2]||'').trim(),
+        depDate:fmtD((f[3]||'').trim()),
+        chalSer:(f[4]||'').trim(),
+        tdsAmt:toN(f[5]), surch:toN(f[6]), cess:toN(f[7]),
+        interest:toN(f[8]), other:toN(f[9]), total:toN(f[10]),
+        minHead:(f[11]||'').trim(),
+        bkEntry:(f[12]||'').trim()==='B'?'Book Entry':'Physical',
+        cseq,
+      };
+      chal.push({...cd});
+
+    } else if(rt==='DD'){
+      if(!bh||!cd) continue;
+      const base={
+        ft, fn,
+        tan:bh.tan, dName:bh.name, dPAN:bh.pan, fy:bh.fy, qtr:bh.qtr, retType:bh.retType,
+        cSr:cd.srNo, bsr:cd.bsr, cDate:cd.depDate, cSer:cd.chalSer,
+        srNo:(f[1]||'').trim(),
+        pan:(f[2]||'').trim(),
+        name:(f[3]||'').trim(),
+      };
+      if(ft==='26Q'||ft==='27Q'){
+        const sc=(f[4]||'').trim(), rc=(f[11]||'').trim();
+        txn.push({...base,
+          sc, sdesc:secDesc(sc),
+          amtPaid:toN(f[5]), payDate:fmtD((f[6]||'').trim()),
+          tdsDed:toN(f[7]), tdsDep:toN(f[8]),
+          certNo:(f[9]||'').trim(), tdsRate:(f[10]||'').trim(),
+          rc, rdesc:rmkDesc(rc),
+          // 24Q-only blanked
+          dob:'',gSal:0,perc:0,pls:0,totSal:0,hpLoss:0,gti:0,dedns:0,taxInc:0,taxAmt:0,
+        });
+      } else {
+        // 24Q – scan backwards for TDS amounts (last 2 non-empty numerics)
+        const backs=[];
+        for(let i=f.length-1;i>=5&&backs.length<4;i--){
+          const v=(f[i]||'').trim(); if(!v) continue;
+          const n=parseFloat(v.replace(/,/g,''));
+          if(!isNaN(n)&&n>=0) backs.push({i,n});
+        }
+        txn.push({...base,
+          // 26Q-only blanked
+          sc:'', sdesc:'', amtPaid:0, payDate:'', certNo:'', tdsRate:'', rc:'', rdesc:'',
+          // 24Q fields
+          dob:fmtD((f[4]||'').trim()),
+          gSal:toN(f[7]), perc:toN(f[8]), pls:toN(f[9]), totSal:toN(f[10]),
+          hpLoss:toN(f[11]), gti:toN(f[12]), dedns:toN(f[13]),
+          taxInc:toN(f[14]), taxAmt:toN(f[15]),
+          tdsDed: backs.length>=2 ? backs[1].n : 0,
+          tdsDep: backs.length>=1 ? backs[0].n : 0,
+        });
+      }
+    }
+  }
+  return {ded, chal, txn};
+}
+
+// ── PDF Parser ──────────────────────────────────────────────────
+async function parsePDF(file, fn) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  const items=[];
+  for(let pn=1;pn<=pdf.numPages;pn++){
+    const pg=await pdf.getPage(pn);
+    const vp=pg.getViewport({scale:1});
+    const tc=await pg.getTextContent();
+    for(const it of tc.items){
+      if(!it.str.trim()) continue;
+      items.push({t:it.str.trim(), x:Math.round(it.transform[4]),
+                  y:Math.round(vp.height-it.transform[5]), pg:pn, w:it.width});
+    }
+  }
+  // Group into visual rows
+  items.sort((a,b)=>a.pg-b.pg||a.y-b.y);
+  const rows=[]; let cy=null,cp=null,cr=[];
+  for(const it of items){
+    if(cy===null||it.pg!==cp||Math.abs(it.y-cy)>6){
+      if(cr.length) rows.push([...cr].sort((a,b)=>a.x-b.x));
+      cr=[it]; cy=it.y; cp=it.pg;
+    } else cr.push(it);
+  }
+  if(cr.length) rows.push([...cr].sort((a,b)=>a.x-b.x));
+
+  const full=rows.map(r=>r.map(i=>i.t).join(' ')).join('\n');
+  let ft='Unknown';
+  if(/\b26Q\b/.test(full)) ft='26Q';
+  else if(/\b24Q\b/.test(full)) ft='24Q';
+
+  const di={ft,fn,tan:'',pan:'',fy:'',qtr:'',name:'',branch:'',retType:'',
+             email:'',phone:'',rPerson:'',rDesig:'',rPAN:'',addr:'',stCode:'',pin:''};
+  const TAN=/\b[A-Z]{4}[0-9]{5}[A-Z]\b/g;
+  const PAN=/\b[A-Z]{5}[0-9]{4}[A-Z]\b/g;
+  const FY=/\b(20\d{2}[-–](20)?\d{2})\b/g;
+  const QTR=/\bQ[1-4]\b/i;
+
+  for(const row of rows.slice(0,50)){
+    const txt=row.map(i=>i.t).join(' ');
+    const tm=txt.match(TAN); if(tm&&!di.tan) di.tan=tm[0];
+    const pm=txt.match(PAN);
+    if(pm) for(const p of pm){ if(!di.pan&&p!==di.tan){di.pan=p;break;} }
+    const fm=txt.match(FY); if(fm&&!di.fy) di.fy=fm[0];
+    const qm=txt.match(QTR); if(qm&&!di.qtr) di.qtr=qm[0].toUpperCase();
+    // Deductor name heuristic
+    if(!di.name&&txt.length>4&&txt.length<80&&!txt.match(/^\d/)&&
+       !tm&&!pm&&!/^(TAN|PAN|FORM|QUARTER|FINANCIAL|CHALLAN|DEDUCTEE|SL\.?\s*NO|PAGE|DATE)/i.test(txt)){
+      if(/[A-Z]{3,}/.test(txt)&&txt.split(' ').length<=8) di.name=txt;
+    }
+  }
+
+  const ded=[]; const chal=[]; const txn=[];
+  if(di.tan||di.pan) ded.push({...di});
+
+  const PANX=/^[A-Z]{5}[0-9]{4}[A-Z]$/;
+  let curChal=null, cCnt=0;
+
+  for(const row of rows){
+    const cells=row.map(i=>i.t);
+    const rtxt=cells.join(' ');
+
+    // Challan row: BSR (7 digits) + date
+    const bsrM=rtxt.match(/\b(\d{7})\b/);
+    const dtM=rtxt.match(/\b(\d{2})[\/\-](\d{2})[\/\-](\d{4})\b/);
+    if(bsrM&&dtM&&cells.length>=3){
+      cCnt++;
+      const amts=cells.map(c=>parseFloat(c.replace(/,/g,''))).filter(n=>!isNaN(n)&&n>0);
+      curChal={ft,fn,tan:di.tan,dName:di.name,fy:di.fy,qtr:di.qtr,
+        srNo:String(cCnt), bsr:bsrM[1], depDate:dtM[0].replace(/-/g,'/'),
+        chalSer:'', tdsAmt:0, surch:0, cess:0, interest:0, other:0,
+        total:amts.length?Math.max(...amts):0, minHead:'', bkEntry:'', cseq:cCnt};
+      chal.push({...curChal});
+      continue;
+    }
+    // Transaction row: find PAN in cells
+    let pi=-1;
+    for(let i=0;i<cells.length;i++){ if(PANX.test(cells[i])){pi=i;break;} }
+    if(pi<0) continue;
+    const pan=cells[pi];
+    if(pan===di.tan) continue;
+    const rem=cells.slice(pi+2);
+    const amts=rem.map(c=>parseFloat(c.replace(/,/g,''))).filter(n=>!isNaN(n)&&n>=0);
+    let sc='',sdesc='';
+    for(const c of rem){ if(SEC[c.toUpperCase()]){sc=c;sdesc=SEC[c.toUpperCase()];break;} }
+    txn.push({
+      ft, fn, tan:di.tan, dName:di.name, dPAN:di.pan, fy:di.fy, qtr:di.qtr, retType:'',
+      cSr:curChal?.srNo||'', bsr:curChal?.bsr||'', cDate:curChal?.depDate||'', cSer:'',
+      srNo:pi>0?cells[pi-1]:'', pan, name:cells[pi+1]||'',
+      sc, sdesc, amtPaid:amts[0]||0, payDate:'',
+      tdsDed:amts[1]||0, tdsDep:amts[2]||0,
+      certNo:'', tdsRate:'', rc:'', rdesc:'',
+      // 24Q blanked
+      dob:'',gSal:0,perc:0,pls:0,totSal:0,hpLoss:0,gti:0,dedns:0,taxInc:0,taxAmt:0,
+    });
+  }
+  return {ded, chal, txn};
+}
+
+// ── File handling ────────────────────────────────────────────────
+function handleFiles(fl){ for(const f of fl) process1(f); }
+
+async function process1(file){
+  const id=`${Date.now()}_${Math.random()}`;
+  D.files[id]={name:file.name,st:'proc',meta:''};
+  renderFiles();
+  try{
+    const isPDF=file.name.toLowerCase().endsWith('.pdf');
+    const r=isPDF ? await parsePDF(file,file.name) : parseFVU(await file.text(),file.name);
+    D.ded.push(...r.ded); D.chal.push(...r.chal); D.txn.push(...r.txn);
+    const fts=[...new Set(r.ded.map(x=>x.ft))].join(', ')||'Unknown';
+    D.files[id]={name:file.name,st:'ok',
+      meta:`${fts} · ${r.txn.length} transaction${r.txn.length!==1?'s':''} · ${r.chal.length} challan${r.chal.length!==1?'s':''}`,
+      ft:fts};
+  } catch(e){
+    D.files[id]={name:file.name,st:'err',meta:e.message};
+    console.error(e);
+  }
+  renderFiles(); renderResults();
+}
+
+// ── Render file list ─────────────────────────────────────────────
+function renderFiles(){
+  const el=document.getElementById('fileList');
+  const items=Object.values(D.files);
+  if(!items.length){el.innerHTML='';return;}
+  el.innerHTML=items.map(it=>{
+    const ico=it.name.endsWith('.pdf')?'📄':'📋';
+    const sb=it.st==='proc'?'<span class="badge by">⏳ Processing…</span>':
+              it.st==='err'?'<span class="badge br">❌ Error</span>':
+              '<span class="badge bv">✅ Done</span>';
+    const fb=it.ft?`<span class="badge bp">${esc(it.ft)}</span>`:'';
+    return `<div class="file-item">
+      <span style="font-size:1.35rem">${ico}</span>
+      <div style="flex:1;min-width:0">
+        <div class="fname">${esc(it.name)}</div>
+        <div class="fmeta">${esc(it.meta||'')}</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">${fb}${sb}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render results ───────────────────────────────────────────────
+function renderResults(){
+  if(!D.txn.length&&!D.chal.length) return;
+  document.getElementById('results').style.display='';
+  const done=Object.values(D.files).filter(f=>f.st==='ok').length;
+  const tds=D.txn.reduce((s,r)=>s+(r.tdsDed||0),0);
+  document.getElementById('s0').textContent=done;
+  document.getElementById('s1').textContent=D.txn.length.toLocaleString();
+  document.getElementById('s2').textContent=D.chal.length.toLocaleString();
+  document.getElementById('s3').textContent='₹'+tds.toLocaleString('en-IN',{maximumFractionDigits:0});
+  renderTxn(); renderChal(); renderDed();
+}
+
+function renderTxn(){
+  const r26=D.txn.filter(r=>r.ft!=='24Q');
+  const r24=D.txn.filter(r=>r.ft==='24Q');
+  const hasPDF=Object.values(D.files).some(f=>f.name.endsWith('.pdf'));
+  let h='';
+  if(hasPDF) h+=`<div class="info-note">ℹ️ <strong>PDF files:</strong> Parsing is best-effort. PAN, Name and amounts are extracted where detectable. For complete field accuracy, prefer <strong>FVU .txt</strong> source files.</div>`;
+
+  if(r26.length){
+    h+=`<p class="sub-head">Form 26Q / 27Q — ${r26.length} Deductee Transaction${r26.length!==1?'s':''}</p>`;
+    h+=`<div class="tw"><table><thead><tr>
+      <th>#</th><th>Form</th><th>TAN</th><th>Deductor Name</th><th>FY</th><th>Qtr</th><th>Return</th>
+      <th>Challan Sr.</th><th>BSR Code</th><th>Challan Date</th><th>Challan Ser.</th>
+      <th>Sr. No.</th><th>Deductee PAN</th><th>Deductee Name</th>
+      <th>Section <i class="tb-i" data-help="The Income Tax section under which TDS was deducted — e.g. 194C = contractors, 194J = professional fees, 194I = rent.">i</i></th><th>Section Description</th>
+      <th class="num">Amt Paid (₹)</th><th>Payment Date</th>
+      <th class="num">TDS Deducted (₹)</th><th class="num">TDS Deposited (₹)</th>
+      <th>Certificate No.</th><th>TDS Rate %</th>
+      <th>Remarks <i class="tb-i" data-help="Deductee PAN status: N = normal, A = not traceable, B = PAN not applied, C = applied but not received, Y = below threshold (no TDS), Z = exempt. A/B/C attract higher TDS u/s 206AA.">i</i></th><th>Remarks Description</th>
+    </tr></thead><tbody>
+    ${r26.map((r,i)=>`<tr>
+      <td>${i+1}</td>
+      <td><span class="badge bb">${esc(r.ft)}</span></td>
+      <td class="mono">${esc(r.tan)}</td><td>${esc(r.dName)}</td>
+      <td>${esc(r.fy)}</td><td>${esc(r.qtr)}</td><td>${esc(r.retType)}</td>
+      <td>${esc(r.cSr)}</td><td class="mono">${esc(r.bsr)}</td>
+      <td>${esc(r.cDate)}</td><td class="mono">${esc(r.cSer)}</td>
+      <td>${esc(r.srNo)}</td>
+      <td class="mono">${esc(r.pan)}</td><td>${esc(r.name)}</td>
+      <td><span class="sec">${esc(r.sc)}</span></td>
+      <td style="font-size:.72rem">${esc(r.sdesc)}</td>
+      <td class="num">${fmtN(r.amtPaid)}</td><td>${esc(r.payDate)}</td>
+      <td class="num bold">${fmtN(r.tdsDed)}</td><td class="num">${fmtN(r.tdsDep)}</td>
+      <td class="mono">${esc(r.certNo)}</td><td class="num">${esc(r.tdsRate)}</td>
+      <td><span class="rmk">${esc(r.rc)}</span></td>
+      <td style="font-size:.72rem">${esc(r.rdesc)}</td>
+    </tr>`).join('')}
+    </tbody></table></div>`;
+  }
+
+  if(r24.length){
+    if(r26.length) h+=`<div class="sep"></div>`;
+    h+=`<p class="sub-head">Form 24Q — ${r24.length} Employee Salary Record${r24.length!==1?'s':''}</p>`;
+    h+=`<div class="tw"><table><thead><tr>
+      <th>#</th><th>TAN</th><th>Employer Name</th><th>FY</th><th>Qtr</th>
+      <th>Challan Sr.</th><th>BSR Code</th><th>Challan Date</th>
+      <th>Employee PAN</th><th>Employee Name</th><th>DOB</th>
+      <th class="num">Gross Salary 17(1) (₹)</th>
+      <th class="num">Perquisites 17(2) (₹)</th>
+      <th class="num">Profits in lieu 17(3) (₹)</th>
+      <th class="num">Total Salary (₹)</th>
+      <th class="num">H.P. Loss (₹)</th>
+      <th class="num">Gross Total Income (₹)</th>
+      <th class="num">Deductions VI-A (₹)</th>
+      <th class="num">Taxable Income (₹)</th>
+      <th class="num">Tax on Income (₹)</th>
+      <th class="num">TDS Deducted (₹)</th>
+      <th class="num">TDS Deposited (₹)</th>
+    </tr></thead><tbody>
+    ${r24.map((r,i)=>`<tr>
+      <td>${i+1}</td>
+      <td class="mono">${esc(r.tan)}</td><td>${esc(r.dName)}</td>
+      <td>${esc(r.fy)}</td><td>${esc(r.qtr)}</td>
+      <td>${esc(r.cSr)}</td><td class="mono">${esc(r.bsr)}</td><td>${esc(r.cDate)}</td>
+      <td class="mono">${esc(r.pan)}</td><td>${esc(r.name)}</td><td>${esc(r.dob)}</td>
+      <td class="num">${fmtN(r.gSal)}</td><td class="num">${fmtN(r.perc)}</td>
+      <td class="num">${fmtN(r.pls)}</td><td class="num">${fmtN(r.totSal)}</td>
+      <td class="num">${fmtN(r.hpLoss)}</td><td class="num">${fmtN(r.gti)}</td>
+      <td class="num">${fmtN(r.dedns)}</td><td class="num">${fmtN(r.taxInc)}</td>
+      <td class="num">${fmtN(r.taxAmt)}</td>
+      <td class="num bold">${fmtN(r.tdsDed)}</td><td class="num">${fmtN(r.tdsDep)}</td>
+    </tr>`).join('')}
+    </tbody></table></div>`;
+  }
+
+  if(!r26.length&&!r24.length){
+    h=`<div class="empty"><div class="ei">📭</div><p>No transactions found yet. Upload FVU or PDF files above.</p></div>`;
+  }
+  document.getElementById('pt').innerHTML=h;
+}
+
+function renderChal(){
+  if(!D.chal.length){
+    document.getElementById('pc').innerHTML=`<div class="empty"><div class="ei">📭</div><p>No challans found.</p></div>`;
+    return;
+  }
+  document.getElementById('pc').innerHTML=`<div class="tw"><table><thead><tr>
+    <th>#</th><th>Form</th><th>File</th><th>TAN</th><th>Deductor Name</th>
+    <th>FY</th><th>Quarter</th><th>Challan Sr.</th>
+    <th>BSR Code</th><th>Date of Deposit</th><th>Challan Serial No.</th>
+    <th class="num">TDS Amount (₹)</th><th class="num">Surcharge (₹)</th>
+    <th class="num">Edu. Cess (₹)</th><th class="num">Interest (₹)</th>
+    <th class="num">Other (₹)</th><th class="num">Total (₹)</th>
+    <th>Minor Head</th><th>Book Entry</th>
+  </tr></thead><tbody>
+  ${D.chal.map((r,i)=>`<tr>
+    <td>${i+1}</td>
+    <td><span class="badge bb">${esc(r.ft)}</span></td>
+    <td style="font-size:.7rem;max-width:130px;overflow:hidden;text-overflow:ellipsis">${esc(r.fn)}</td>
+    <td class="mono">${esc(r.tan)}</td><td>${esc(r.dName)}</td>
+    <td>${esc(r.fy)}</td><td>${esc(r.qtr)}</td>
+    <td>${esc(r.srNo)}</td><td class="mono">${esc(r.bsr)}</td>
+    <td>${esc(r.depDate)}</td><td class="mono">${esc(r.chalSer)}</td>
+    <td class="num">${fmtN(r.tdsAmt)}</td><td class="num">${fmtN(r.surch)}</td>
+    <td class="num">${fmtN(r.cess)}</td><td class="num">${fmtN(r.interest)}</td>
+    <td class="num">${fmtN(r.other)}</td>
+    <td class="num bold">${fmtN(r.total)}</td>
+    <td>${esc(r.minHead)}</td><td>${esc(r.bkEntry)}</td>
+  </tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+function renderDed(){
+  if(!D.ded.length){
+    document.getElementById('pd').innerHTML=`<div class="empty"><div class="ei">📭</div><p>No deductor info found.</p></div>`;
+    return;
+  }
+  document.getElementById('pd').innerHTML=`<div class="tw"><table><thead><tr>
+    <th>#</th><th>Form</th><th>Return Type</th><th>TAN</th><th>PAN</th>
+    <th>Deductor Name</th><th>Branch / Division</th>
+    <th>FY</th><th>Quarter</th>
+    <th>Address</th><th>State Code</th><th>PIN</th>
+    <th>Email</th><th>Phone</th>
+    <th>Responsible Person</th><th>Designation</th><th>Resp. PAN</th>
+  </tr></thead><tbody>
+  ${D.ded.map((r,i)=>`<tr>
+    <td>${i+1}</td>
+    <td><span class="badge bb">${esc(r.ft)}</span></td>
+    <td>${esc(r.retType)}</td>
+    <td class="mono">${esc(r.tan)}</td>
+    <td class="mono">${esc(r.pan)}</td>
+    <td><strong>${esc(r.name)}</strong></td>
+    <td>${esc(r.branch)}</td>
+    <td>${esc(r.fy)}</td><td>${esc(r.qtr)}</td>
+    <td style="max-width:160px;white-space:normal;font-size:.72rem">${esc(r.addr)}</td>
+    <td>${esc(r.stCode)}</td><td>${esc(r.pin)}</td>
+    <td>${esc(r.email)}</td><td>${esc(r.phone)}</td>
+    <td>${esc(r.rPerson)}</td><td>${esc(r.rDesig)}</td>
+    <td class="mono">${esc(r.rPAN)}</td>
+  </tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+// ── Tab switch ───────────────────────────────────────────────────
+function showTab(name, btn){
+  ['pt','pc','pd'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById({txn:'pt',chal:'pc',ded:'pd'}[name]).style.display='';
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── Excel export ─────────────────────────────────────────────────
+function exportXLS(){
+  if(!D.txn.length&&!D.chal.length&&!D.ded.length){
+    alert('No data to export. Please upload and process files first.'); return;
+  }
+  const wb=XLSX.utils.book_new();
+  const today=new Date().toLocaleDateString('en-IN').replace(/\//g,'_');
+
+  // Sheet 1: Deductor Info
+  const dH=['#','File','Form Type','Return Type','TAN','PAN','Deductor Name','Branch / Division',
+    'Assessment Year','Quarter','Address','State Code','PIN','Email','Phone',
+    'Responsible Person','Designation','Resp. PAN'];
+  const dD=D.ded.map((r,i)=>[i+1,r.fn,r.ft,r.retType,r.tan,r.pan,r.name,r.branch,
+    r.fy,r.qtr,r.addr,r.stCode,r.pin,r.email,r.phone,r.rPerson,r.rDesig,r.rPAN]);
+  const ws1=XLSX.utils.aoa_to_sheet([dH,...dD]);
+  ws1['!cols']=[4,30,8,12,14,14,32,20,10,8,35,8,8,25,15,25,18,14].map(w=>({wch:w}));
+  ws1['!autofilter']={ref:ws1['!ref']};
+  ws1['!views']=[{state:'frozen',ySplit:1}];
+  XLSX.utils.book_append_sheet(wb,ws1,'Deductor Info');
+
+  // Sheet 2: Challans
+  const cH=['#','File','Form Type','TAN','Deductor Name','Assessment Year','Quarter',
+    'Challan Sr.','BSR Code','Date of Deposit','Challan Serial No.',
+    'TDS Amount (₹)','Surcharge (₹)','Edu. Cess (₹)','Interest (₹)',
+    'Other Amount (₹)','Total Amount (₹)','Minor Head','Book Entry'];
+  const cD=D.chal.map((r,i)=>[i+1,r.fn,r.ft,r.tan,r.dName,r.fy,r.qtr,
+    r.srNo,r.bsr,r.depDate,r.chalSer,
+    r.tdsAmt,r.surch,r.cess,r.interest,r.other,r.total,r.minHead,r.bkEntry]);
+  const ws2=XLSX.utils.aoa_to_sheet([cH,...cD]);
+  ws2['!cols']=[4,30,8,14,30,10,8,10,12,14,16,14,12,12,12,12,14,10,12].map(w=>({wch:w}));
+  ws2['!autofilter']={ref:ws2['!ref']};
+  ws2['!views']=[{state:'frozen',ySplit:1}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Challan Details');
+
+  // Sheet 3: 26Q Transactions
+  const t26=D.txn.filter(r=>r.ft!=='24Q');
+  if(t26.length){
+    const h26=['#','File','Form Type','TAN','Deductor Name','Deductor PAN','Assessment Year',
+      'Quarter','Return Type','Challan Sr.','BSR Code','Challan Date','Challan Serial No.',
+      'Sr. No.','Deductee PAN','Deductee Name','Section Code','Section Description',
+      'Amount Paid / Credited (₹)','Date of Payment / Credit',
+      'TDS Deducted (₹)','TDS Deposited (₹)',
+      'Certificate No.','TDS Rate (%) as per Certificate',
+      'Remarks Code','Remarks Description'];
+    const d26=t26.map((r,i)=>[i+1,r.fn,r.ft,r.tan,r.dName,r.dPAN,r.fy,r.qtr,r.retType,
+      r.cSr,r.bsr,r.cDate,r.cSer,r.srNo,r.pan,r.name,r.sc,r.sdesc,
+      r.amtPaid,r.payDate,r.tdsDed,r.tdsDep,r.certNo,r.tdsRate,r.rc,r.rdesc]);
+    const ws3=XLSX.utils.aoa_to_sheet([h26,...d26]);
+    ws3['!cols']=[4,28,8,14,28,14,10,8,12,10,12,14,16,8,14,28,10,30,18,14,18,18,14,14,10,30].map(w=>({wch:w}));
+    ws3['!autofilter']={ref:ws3['!ref']};
+    ws3['!views']=[{state:'frozen',ySplit:1}];
+    XLSX.utils.book_append_sheet(wb,ws3,'26Q Transactions');
+  }
+
+  // Sheet 4: 24Q Transactions
+  const t24=D.txn.filter(r=>r.ft==='24Q');
+  if(t24.length){
+    const h24=['#','File','TAN','Employer Name','Employer PAN','Assessment Year','Quarter',
+      'Challan Sr.','BSR Code','Challan Date',
+      'Sr. No.','Employee PAN','Employee Name','Date of Birth',
+      'Gross Salary u/s 17(1) (₹)','Perquisites u/s 17(2) (₹)',
+      'Profits in lieu of Salary u/s 17(3) (₹)','Total Salary (₹)',
+      'Loss from House Property (₹)','Gross Total Income (₹)',
+      'Deductions under Chapter VI-A (₹)','Taxable Income (₹)',
+      'Tax on Total Income (₹)','TDS Deducted (₹)','TDS Deposited (₹)'];
+    const d24=t24.map((r,i)=>[i+1,r.fn,r.tan,r.dName,r.dPAN,r.fy,r.qtr,
+      r.cSr,r.bsr,r.cDate,r.srNo,r.pan,r.name,r.dob,
+      r.gSal,r.perc,r.pls,r.totSal,r.hpLoss,r.gti,r.dedns,r.taxInc,r.taxAmt,
+      r.tdsDed,r.tdsDep]);
+    const ws4=XLSX.utils.aoa_to_sheet([h24,...d24]);
+    ws4['!cols']=[4,28,14,28,14,10,8,10,12,14,8,14,28,12,18,18,22,18,18,20,22,18,18,18,18].map(w=>({wch:w}));
+    ws4['!autofilter']={ref:ws4['!ref']};
+    ws4['!views']=[{state:'frozen',ySplit:1}];
+    XLSX.utils.book_append_sheet(wb,ws4,'24Q Transactions');
+  }
+
+  XLSX.writeFile(wb,`TDS_Extract_${today}.xlsx`);
+}
+
+// ── Drag-drop wiring ─────────────────────────────────────────────
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover', e=>{e.preventDefault();dz.classList.add('over');});
+dz.addEventListener('dragleave', ()=>dz.classList.remove('over'));
+dz.addEventListener('drop', e=>{
+  e.preventDefault(); dz.classList.remove('over');
+  if(e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+});
+dz.addEventListener('click', ()=>document.getElementById('fi').click());
+</script>
+</body>
+</html>

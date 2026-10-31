@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payroll Tool — PF, ESIC, PT & Payslips</title>
+<meta name="description" content="Run monthly or annual payroll with automatic PF, ESIC and Professional Tax deductions, generate printable payslips and manage multiple organizations. PIN-protected and fully offline.">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="/toolbox.css">
+<script src="/toolbox.js" data-tool="Payroll Tool" defer></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#1a5fb4;--blue-light:#e8f0fb;--blue-mid:#4a86d8;--blue-dark:#0d3b7a;
+  --green:#2d7d46;--green-bg:#e8f5ec;--red:#b91c1c;--red-bg:#fef2f2;
+  --amber:#92400e;--amber-bg:#fffbeb;--border:#d1d9e6;--text:#1a1f2e;
+  --text2:#4a5568;--text3:#718096;--bg:#f4f6fb;--white:#fff;
+  --radius:10px;--radius-sm:6px;--shadow:0 1px 4px rgba(0,0,0,.08)
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;color:var(--text);background:var(--bg);line-height:1.5}
+.wrap{padding:1.5rem;max-width:1100px;margin:0 auto}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;gap:12px;flex-wrap:wrap;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;box-shadow:var(--shadow)}
+.org-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.org-label{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+.org-select-wrap{position:relative;display:flex;align-items:center}
+.org-select-wrap select{padding:9px 36px 9px 12px;font-size:14px;font-weight:600;border:1.5px solid var(--blue);border-radius:var(--radius-sm);background:var(--blue-light);color:var(--blue-dark);appearance:none;cursor:pointer;min-width:200px}
+.org-select-wrap select:focus{outline:none;box-shadow:0 0 0 3px rgba(26,95,180,.2)}
+.org-chev{position:absolute;right:10px;pointer-events:none;color:var(--blue)}
+
+/* NAV */
+.nav{display:flex;gap:3px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px}
+.nav-btn{padding:9px 18px;font-size:14px;cursor:pointer;background:transparent;border:none;color:var(--text2);border-radius:var(--radius-sm);font-weight:500;transition:all .15s;display:flex;align-items:center;gap:7px}
+.nav-btn.active{background:var(--white);color:var(--blue);font-weight:600;box-shadow:var(--shadow);border:1px solid var(--border)}
+.nav-btn:hover:not(.active){background:var(--white);color:var(--text)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;font-size:14px;font-weight:500;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--white);color:var(--text);cursor:pointer;transition:all .12s;white-space:nowrap;font-family:inherit}
+.btn:hover{background:var(--bg);border-color:#aab4c8}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-primary:hover{background:var(--blue-dark);border-color:var(--blue-dark)}
+.btn-sm{padding:6px 12px;font-size:13px}
+.btn-ghost{border-color:transparent;color:var(--text2);background:transparent}
+.btn-ghost:hover{background:var(--bg);color:var(--text);border-color:var(--border)}
+.btn-danger{color:var(--red);border-color:#fca5a5;background:#fff5f5}
+.btn-danger:hover{background:var(--red-bg)}
+.btn-edit{color:var(--blue);border-color:#93c5fd;background:var(--blue-light)}
+.btn-edit:hover{background:#dbeafe}
+.btn-del-org{color:var(--red);border-color:#fca5a5;background:#fff5f5}
+.btn-del-org:hover{background:var(--red-bg)}
+
+/* SECTIONS */
+.section{display:none}.section.active{display:block}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:1.25rem;box-shadow:var(--shadow)}
+.card-head{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;background:linear-gradient(135deg,#f8faff 0%,var(--white) 100%);border-radius:var(--radius) var(--radius) 0 0}
+.card-title{font-size:15px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px}
+.card-subtitle{font-size:12px;color:var(--text3);margin-top:2px}
+.card-body{padding:1.25rem}
+
+/* FORM */
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:600;color:var(--text2)}
+input,select,textarea{width:100%;padding:9px 12px;font-size:14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--white);color:var(--text);font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,95,180,.15)}
+input[type=number]{-moz-appearance:textfield}
+input[type=number]::-webkit-inner-spin-button{opacity:1}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px}
+
+/* PAY TOGGLE */
+.pay-toggle{display:flex;border:1.5px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;width:fit-content}
+.pay-toggle-btn{padding:8px 18px;font-size:14px;font-weight:500;cursor:pointer;background:transparent;border:none;color:var(--text2);border-right:1.5px solid var(--border);transition:all .12s;font-family:inherit}
+.pay-toggle-btn:last-child{border-right:none}
+.pay-toggle-btn.active{background:var(--blue);color:#fff}
+
+/* BADGES */
+.badge{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px}
+.badge-monthly{background:var(--blue-light);color:var(--blue-dark)}
+.badge-annual{background:var(--green-bg);color:var(--green)}
+.badge-on{background:var(--green-bg);color:var(--green)}
+.badge-off{background:var(--bg);color:var(--text3);border:1px solid var(--border)}
+
+/* NOTICES */
+.notice{font-size:14px;padding:12px 16px;border-radius:var(--radius-sm);margin-bottom:1rem;line-height:1.6;border:1px solid}
+.notice-info{background:var(--blue-light);border-color:#93c5fd;color:var(--blue-dark)}
+.notice-warn{background:var(--amber-bg);border-color:#fcd34d;color:var(--amber)}
+.notice-success{background:var(--green-bg);border-color:#86efac;color:var(--green)}
+.notice-error{background:var(--red-bg);border-color:#fca5a5;color:var(--red)}
+.err{font-size:13px;color:var(--red);margin-top:6px;font-weight:500}
+
+/* TABLES */
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:left;font-size:12px;font-weight:600;color:var(--text3);padding:10px 14px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;background:var(--bg)}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover td{background:#f8faff}
+.tbl tfoot td{font-weight:600;background:var(--bg);border-top:2px solid var(--border);padding:11px 14px}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.25rem}
+.metric{background:linear-gradient(135deg,var(--blue-light),#f0f6ff);border:1px solid #b3d0f5;border-radius:var(--radius);padding:16px 18px}
+.metric-lbl{font-size:12px;font-weight:600;color:var(--blue-mid);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.metric-val{font-size:22px;font-weight:700;color:var(--blue-dark)}
+
+/* ATTENDANCE INPUT */
+.att-input{width:72px;padding:7px 8px;text-align:center;font-size:14px}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:3rem 1rem;color:var(--text3);font-size:15px}
+.empty-icon{width:48px;height:48px;border-radius:50%;background:var(--bg);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+
+/* PCT ROWS */
+.pct-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pct-total{font-size:14px;font-weight:600;padding:10px 14px;border-radius:var(--radius-sm);margin-top:6px}
+.pct-ok{background:var(--green-bg);color:var(--green)}
+.pct-bad{background:var(--red-bg);color:var(--red)}
+
+/* DEDUCTION TOGGLES */
+.ded-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:1rem}
+.ded-card{border:1.5px solid var(--border);border-radius:var(--radius);padding:1rem;cursor:pointer;transition:all .15s;user-select:none}
+.ded-card.on{border-color:var(--blue);background:var(--blue-light)}
+.ded-card-title{font-size:14px;font-weight:600;margin-bottom:4px}
+.ded-card-desc{font-size:12px;color:var(--text3);line-height:1.5}
+.ded-card.on .ded-card-desc{color:var(--blue-dark)}
+
+/* PT SLAB TABLE */
+.slab-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:14px}
+.slab-row input{width:110px}
+.slab-row span{color:var(--text3);white-space:nowrap}
+
+/* NEW ORG MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-box{background:var(--white);border-radius:var(--radius);padding:2rem;max-width:480px;width:100%;margin:1rem;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:1.25rem;color:var(--text)}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.25rem;align-items:center}
+
+/* HOW TO USE */
+.how-steps{counter-reset:step;display:flex;flex-direction:column;gap:12px}
+.how-step{display:flex;align-items:flex-start;gap:14px;padding:14px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--white)}
+.how-step-num{counter-increment:step;width:30px;height:30px;border-radius:50%;background:var(--blue);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.how-step-body strong{display:block;font-size:14px;font-weight:600;margin-bottom:3px;color:var(--text)}
+.how-step-body span{font-size:13px;color:var(--text2);line-height:1.6}
+
+/* PAYSLIP OVERLAY */
+.payslip-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);padding:2rem 1rem;z-index:1000;overflow-y:auto;align-items:flex-start;justify-content:center}
+.ps-wrap{background:#fff;border-radius:var(--radius);max-width:640px;margin:0 auto;overflow:hidden;border:1px solid #ccc;color:#111;font-family:Arial,sans-serif}
+.ps-top{background:var(--blue);padding:1.5rem 2rem;display:flex;justify-content:space-between;align-items:flex-start}
+.ps-company{font-size:18px;font-weight:700;color:#fff}
+.ps-addr{font-size:12px;color:rgba(255,255,255,.78);margin-top:3px}
+.ps-slip-label{font-size:11px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.06em;text-align:right;margin-bottom:2px}
+.ps-period-val{font-size:14px;font-weight:700;color:#fff;text-align:right}
+.ps-info-grid{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #e5e7eb}
+.ps-info-col{padding:1rem 1.75rem}
+.ps-info-col:first-child{border-right:1px solid #e5e7eb}
+.ps-kv{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;border-bottom:.5px solid #f3f4f6}
+.ps-kv:last-child{border-bottom:none}
+.ps-key{color:#6b7280}
+.ps-val{font-weight:600;color:#111}
+.ps-attend-bar{display:grid;grid-template-columns:repeat(3,1fr);background:#f8faff;border-bottom:1px solid #e5e7eb}
+.ps-ab-item{padding:14px 1.5rem;text-align:center;border-right:1px solid #e5e7eb}
+.ps-ab-item:last-child{border-right:none}
+.ps-ab-lbl{font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.ps-ab-val{font-size:18px;font-weight:700;color:var(--blue-dark)}
+.ps-body{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #e5e7eb}
+.ps-col{border-right:1px solid #e5e7eb}
+.ps-col:last-child{border-right:none}
+.ps-col-head{padding:9px 1.75rem;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--blue);background:#eef4fb;border-bottom:1px solid #dde8f5}
+.ps-row{display:flex;justify-content:space-between;padding:8px 1.75rem;border-bottom:.5px solid #f3f4f6;font-size:13px}
+.ps-row:last-child{border-bottom:none}
+.ps-row.ps-total{font-weight:700;background:#f8faff;border-top:1px solid #e5e7eb;border-bottom:none;font-size:14px}
+.ps-net-bar{display:flex;justify-content:space-between;align-items:center;padding:16px 1.75rem;background:var(--blue)}
+.ps-net-lbl{font-size:14px;font-weight:600;color:rgba(255,255,255,.85)}
+.ps-net-val{font-size:24px;font-weight:700;color:#fff}
+.ps-actions-bar{display:flex;gap:8px;padding:1rem 1.75rem;border-top:1px solid #e5e7eb;background:#fafafa}
+
+/* SECTION HEADER */
+.section-header{margin-bottom:1.25rem}
+.section-header h2{font-size:20px;font-weight:700;color:var(--text)}
+.section-header p{font-size:14px;color:var(--text3);margin-top:3px}
+.divider{height:1px;background:var(--border);margin:1.25rem 0}
+
+@media print{body{background:#fff}.wrap{padding:0;max-width:100%}}
+
+/* PIN SCREEN */
+.pin-screen{display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;align-items:center;justify-content:center;flex-direction:column}
+.pin-screen.show{display:flex}
+.pin-box{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:2.5rem 2rem;max-width:380px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.12)}
+.pin-logo{width:56px;height:56px;background:var(--blue-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem}
+.pin-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:6px}
+.pin-subtitle{font-size:14px;color:var(--text3);margin-bottom:1.75rem;line-height:1.5}
+.pin-dots{display:flex;justify-content:center;gap:14px;margin-bottom:1.75rem}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);background:var(--white);transition:all .15s}
+.pin-dot.filled{background:var(--blue);border-color:var(--blue)}
+.pin-dot.shake{animation:shake .3s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:240px;margin:0 auto}
+.pin-key{padding:16px;font-size:20px;font-weight:600;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--white);color:var(--text);cursor:pointer;transition:all .1s;font-family:inherit}
+.pin-key:hover{background:var(--blue-light);border-color:var(--blue);color:var(--blue)}
+.pin-key:active{transform:scale(.94);background:var(--blue);color:#fff;border-color:var(--blue)}
+.pin-key.del{font-size:16px;color:var(--text3)}
+.pin-key.del:hover{background:var(--red-bg);border-color:#fca5a5;color:var(--red)}
+.pin-err{font-size:13px;color:var(--red);font-weight:600;margin-top:14px;min-height:20px}
+.pin-attempts{font-size:12px;color:var(--text3);margin-top:6px;min-height:18px}
+</style>
+</head>
+<body>
+<div class="wrap" id="appRoot">
+
+<!-- PIN SCREEN -->
+<div class="pin-screen" id="pinScreen">
+  <div class="pin-box">
+    <div class="pin-logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none"><rect x="5" y="11" width="16" height="12" rx="2.5" stroke="#1a5fb4" stroke-width="1.8"/><path d="M9 11V8a4 4 0 0 1 8 0v3" stroke="#1a5fb4" stroke-width="1.8" stroke-linecap="round"/><circle cx="13" cy="17" r="1.5" fill="#1a5fb4"/></svg>
+    </div>
+    <div class="pin-title" id="pinTitle">Welcome back</div>
+    <div class="pin-subtitle" id="pinSubtitle">Enter your PIN to access Payroll Tool</div>
+    <div class="pin-dots" id="pinDots">
+      <div class="pin-dot" id="dot0"></div>
+      <div class="pin-dot" id="dot1"></div>
+      <div class="pin-dot" id="dot2"></div>
+      <div class="pin-dot" id="dot3"></div>
+    </div>
+    <div class="pin-keypad">
+      <button class="pin-key" onclick="pinKey('1')">1</button>
+      <button class="pin-key" onclick="pinKey('2')">2</button>
+      <button class="pin-key" onclick="pinKey('3')">3</button>
+      <button class="pin-key" onclick="pinKey('4')">4</button>
+      <button class="pin-key" onclick="pinKey('5')">5</button>
+      <button class="pin-key" onclick="pinKey('6')">6</button>
+      <button class="pin-key" onclick="pinKey('7')">7</button>
+      <button class="pin-key" onclick="pinKey('8')">8</button>
+      <button class="pin-key" onclick="pinKey('9')">9</button>
+      <div></div>
+      <button class="pin-key" onclick="pinKey('0')">0</button>
+      <button class="pin-key del" onclick="pinBackspace()">⌫</button>
+    </div>
+    <div class="pin-err" id="pinErr"></div>
+    <div class="pin-attempts" id="pinAttempts"></div>
+  </div>
+</div>
+
+<!-- NEW ORG MODAL -->
+<div class="modal-overlay" id="newOrgModal">
+  <div class="modal-box">
+    <div class="modal-title">Create new organization</div>
+    <div class="field" style="margin-bottom:14px"><label>Organization name *</label><input id="newOrgName" placeholder="e.g. Acme Textiles Pvt Ltd"></div>
+    <div class="field" style="margin-bottom:1.25rem">
+      <label>Pay type for this organization <i class="tb-i" data-help="Monthly: enter each employee's gross PER MONTH. Annual: enter gross PER YEAR — it is prorated per day worked. Every employee added to this organization follows this pay type.">i</i></label>
+      <div class="pay-toggle" style="margin-top:4px">
+        <button id="newOrgPtM" class="pay-toggle-btn active" onclick="setNewOrgPt('monthly')">Monthly pay</button>
+        <button id="newOrgPtA" class="pay-toggle-btn" onclick="setNewOrgPt('annual')">Annual pay</button>
+      </div>
+    </div>
+    <div id="newOrgErr" class="err" style="display:none;margin-bottom:10px"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="createOrg()">Create organization</button>
+      <button class="btn btn-ghost" onclick="closeNewOrgModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYSLIP OVERLAY -->
+<div id="payslipOverlay" class="payslip-overlay" onclick="if(event.target===this)closePayslip()">
+  <div class="ps-wrap" id="psWrap"></div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="org-left">
+    <span class="org-label">Organization</span>
+    <div class="org-select-wrap">
+      <select id="orgSwitcher" onchange="switchOrg(this.value)"></select>
+      <svg class="org-chev" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.5l3.5 3.5 3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <button class="btn btn-sm" onclick="openNewOrgModal()" style="border-color:#93c5fd;color:var(--blue)">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      New Org
+    </button>
+    <button class="btn btn-sm btn-del-org" id="delOrgBtn" onclick="deleteCurrentOrg()">Delete Org</button>
+  </div>
+  <div class="nav">
+    <button class="nav-btn" onclick="showTab('guide')">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M7.5 7v4M7.5 5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      How to Use
+    </button>
+    <button class="nav-btn active" onclick="showTab('org')">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="2" y="2" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M5 7.5h5M7.5 5v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Organization
+    </button>
+    <button class="nav-btn" onclick="showTab('employees')">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M2 14c0-3.038 2.462-5.5 5.5-5.5S13 10.962 13 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Employees
+    </button>
+    <button class="nav-btn" onclick="showTab('payroll')">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="2" y="2.5" width="11" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 7h5M5 9.5h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Run Payroll
+    </button>
+    <button class="nav-btn" onclick="showTab('settings')">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M7.5 1.5v1M7.5 12.5v1M1.5 7.5h1M12.5 7.5h1M3.4 3.4l.7.7M10.9 10.9l.7.7M3.4 11.6l.7-.7M10.9 4.1l.7-.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Settings
+    </button>
+  </div>
+</div>
+
+<!-- HOW TO USE -->
+<div id="guide" class="section">
+  <div class="section-header">
+    <h2>How to Use This Payroll Tool</h2>
+    <p>Follow these steps to process payroll for your organization</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-title">Getting started</span></div>
+    <div class="card-body">
+      <div class="how-steps">
+        <div class="how-step">
+          <div class="how-step-num">1</div>
+          <div class="how-step-body">
+            <strong>Set up your Organization</strong>
+            <span>Go to the <b>Organization</b> tab. Fill in your company name, address, and registration details (PF, ESI, GSTIN). Configure which statutory deductions apply — PF, ESIC, and/or Professional Tax. Set your state's PT slab. Add your salary breakup components (Basic, HRA, etc.) so payslips show a proper earnings breakdown. Click <b>Save Organization</b>.</span>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="how-step-num">2</div>
+          <div class="how-step-body">
+            <strong>Add Employees</strong>
+            <span>Go to the <b>Employees</b> tab. Click <b>Add Employee</b> and fill in their ID, name, designation, department, date of joining, date of birth, and gross pay. Each employee belongs to the currently selected organization. You can edit or remove employees at any time using the Edit button next to each row.</span>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="how-step-num">3</div>
+          <div class="how-step-body">
+            <strong>Run Payroll</strong>
+            <span>Go to <b>Run Payroll</b>. Select the month and year. Enter the number of <b>Present Days</b> for each employee. Overtime days are automatically added on top. Click <b>Calculate Payroll</b> to compute earnings, statutory deductions (PF, ESIC, PT), and net pay.</span>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="how-step-num">4</div>
+          <div class="how-step-body">
+            <strong>View &amp; Print Payslips</strong>
+            <span>After calculation, click <b>View Payslip</b> next to any employee to see their individual payslip. Use <b>Print Payslip</b> to print or save as PDF. Use <b>Bulk Download Payslips</b> to print all payslips in one go — each employee gets a separate page.</span>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="how-step-num">5</div>
+          <div class="how-step-body">
+            <strong>Multiple Organizations</strong>
+            <span>Use the organization switcher at the top to switch between organizations. Each organization has its own employee list, deduction settings, and salary breakup. Click <b>New Org</b> to create an additional organization (e.g. a sister company in the same business group).</span>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="how-step-num">6</div>
+          <div class="how-step-body">
+            <strong>Export &amp; Import Data</strong>
+            <span>In the Employees tab, use <b>Export List</b> to save your employee data as a JSON file. Use <b>Import List</b> to load a previously exported file. Payroll results can be exported as <b>CSV</b> for use in Excel or accounting software.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-title">Statutory deduction rules</span></div>
+    <div class="card-body">
+      <div class="grid-3" style="gap:14px">
+        <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px">
+          <div style="font-size:14px;font-weight:700;color:var(--blue);margin-bottom:8px">PF (Provident Fund)</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.7">Employee contribution: <b>12% of Basic salary</b><br>Capped at <b>₹1,800/month</b> (when Basic &gt; ₹15,000)<br>Basic salary = as per your breakup %</div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px">
+          <div style="font-size:14px;font-weight:700;color:var(--blue);margin-bottom:8px">ESIC</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.7">Applicable only if gross earned ≤ <b>₹21,000/month</b><br>Employee: <b>0.75% of gross earned</b><br>Not applicable for annual-pay employees above threshold</div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px">
+          <div style="font-size:14px;font-weight:700;color:var(--blue);margin-bottom:8px">Professional Tax</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.7">Varies by state. Configure your state's slab in Organization settings.<br>Applied on <b>gross earned per month</b>.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ORGANIZATION TAB -->
+<div id="org" class="section active">
+  <div class="section-header">
+    <h2 id="orgSectionTitle">Organization Settings</h2>
+    <p>Manage your company details, deductions and salary structure</p>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">Company details</div></div>
+      <span id="orgPayTypeBadge" class="badge"></span>
+    </div>
+    <div class="card-body">
+      <div class="grid-2" style="margin-bottom:14px">
+        <div class="field"><label>Company name *</label><input id="orgName" placeholder="e.g. Acme Pvt Ltd"></div>
+        <div class="field"><label>Address</label><input id="orgAddr" placeholder="e.g. 123, MG Road, Ahmedabad"></div>
+      </div>
+      <div class="grid-3" style="margin-bottom:14px">
+        <div class="field"><label>Email</label><input id="orgEmail" placeholder="hr@company.com"></div>
+        <div class="field"><label>Phone</label><input id="orgPhone" placeholder="+91 98765 43210"></div>
+        <div class="field"><label>Website</label><input id="orgWeb" placeholder="www.company.com"></div>
+      </div>
+      <div class="grid-3">
+        <div class="field"><label>PF Registration No.</label><input id="orgPF" placeholder="PF number"></div>
+        <div class="field"><label>ESI Registration No.</label><input id="orgESI" placeholder="ESI number"></div>
+        <div class="field"><label>GSTIN</label><input id="orgGST" placeholder="GSTIN"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="card-title">Statutory deductions</div></div>
+    <div class="card-body">
+      <p style="font-size:14px;color:var(--text2);margin-bottom:1rem">Enable the deductions applicable to this organization. They will be automatically calculated for each employee's payslip.</p>
+      <div class="ded-grid" id="dedCards">
+        <div class="ded-card on" id="dedPF" onclick="toggleDed('PF')">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div class="ded-card-title">PF</div><span id="dedPFBadge" class="badge badge-on">ON</span>
+          </div>
+          <div class="ded-card-desc">Provident Fund — 12% of Basic (max ₹1,800/month). Employee share deducted from salary.</div>
+        </div>
+        <div class="ded-card on" id="dedESIC" onclick="toggleDed('ESIC')">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div class="ded-card-title">ESIC <i class="tb-i" data-help="Employee State Insurance applies only to employees whose gross EARNED amount is ₹21,000 or less per month — the tool automatically skips it above that threshold.">i</i></div><span id="dedESICBadge" class="badge badge-on">ON</span>
+          </div>
+          <div class="ded-card-desc">Employee State Insurance — 0.75% of gross earned. Only for employees with gross ≤ ₹21,000.</div>
+        </div>
+        <div class="ded-card on" id="dedPT" onclick="toggleDed('PT')">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div class="ded-card-title">Professional Tax</div><span id="dedPTBadge" class="badge badge-on">ON</span>
+          </div>
+          <div class="ded-card-desc">State-specific slab tax on monthly gross earned. Configure your state's slab below.</div>
+        </div>
+      </div>
+
+      <div id="ptSlabSection" style="margin-top:6px">
+        <div class="divider"></div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px;color:var(--text)">Professional Tax slab</div>
+        <p style="font-size:13px;color:var(--text3);margin-bottom:14px">Define PT deduction based on monthly gross earned. Add rows for each slab. Leave "up to" empty on the last row to mean "above all previous slabs". Default: Maharashtra.</p>
+        <div id="ptSlabRows"></div>
+        <div id="ptSlabErr" class="err" style="display:none;margin-bottom:8px"></div>
+        <button class="btn btn-sm" onclick="addPTSlabRow('','')">+ Add slab row</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">Salary breakup</div><div class="card-subtitle">How gross salary is split into components for payslip (must total 100%)</div></div>
+    </div>
+    <div class="card-body">
+      <div id="breakupRows"></div>
+      <div id="pctTotal" style="display:none" class="pct-total"></div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn btn-sm" onclick="addBreakupRow('','')">+ Add component</button>
+        <button class="btn btn-primary" onclick="saveOrgData()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5l3.5 3.5L12 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Save Organization
+        </button>
+      </div>
+      <div id="orgSaveMsg" style="display:none;margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- EMPLOYEES TAB -->
+<div id="employees" class="section">
+  <div class="section-header">
+    <h2>Employees</h2>
+    <p id="empSectionSub">Manage employees for the selected organization</p>
+  </div>
+  <div class="toolbar">
+    <button class="btn btn-primary" onclick="openEmpForm()">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      Add Employee
+    </button>
+    <button class="btn" onclick="exportJSON()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v9M4 7l3 3 3-3M1 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Export List
+    </button>
+    <button class="btn" onclick="document.getElementById('importFile').click()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 10V1M4 4l3-3 3 3M1 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Import List
+    </button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+  </div>
+
+  <div id="addCard" class="card" style="display:none">
+    <div class="card-head">
+      <span class="card-title" id="empFormTitle">New Employee</span>
+      <button class="btn btn-ghost btn-sm" onclick="closeEmpForm()">✕ Cancel</button>
+    </div>
+    <div class="card-body">
+      <div id="ptLocked" class="notice notice-info" style="margin-bottom:14px"></div>
+      <div class="grid-3" style="margin-bottom:14px">
+        <div class="field"><label>Employee ID *</label><input id="fId" placeholder="EMP001"></div>
+        <div class="field"><label>Full Name *</label><input id="fName" placeholder="Full name"></div>
+        <div class="field"><label>Designation *</label><input id="fDesig" placeholder="e.g. Manager"></div>
+      </div>
+      <div class="grid-4" style="margin-bottom:14px">
+        <div class="field"><label>Department *</label><input id="fDept" placeholder="e.g. Finance"></div>
+        <div class="field"><label>Date of Joining</label><input id="fDoj" type="date"></div>
+        <div class="field"><label>Date of Birth</label><input id="fDob" type="date"></div>
+        <div class="field"><label id="fPayLabel">Gross Monthly Pay (₹) *</label><input id="fPay" type="number" min="0" placeholder="0"></div>
+      </div>
+      <div id="fErr" class="err" style="display:none"></div>
+      <div style="display:flex;gap:10px;margin-top:6px">
+        <button class="btn btn-primary" onclick="saveEmp()">Save Employee</button>
+        <button class="btn btn-ghost" onclick="closeEmpForm()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="overflow:hidden">
+    <div class="card-head">
+      <span class="card-title">Employee list</span>
+      <span id="empCount" style="font-size:14px;color:var(--text3);font-weight:500"></span>
+    </div>
+    <div id="empTableWrap">
+      <div class="empty">
+        <div class="empty-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="7" r="4" stroke="#9ca3af" stroke-width="1.5"/><path d="M3 21c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="#9ca3af" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+        <div>No employees yet.</div>
+        <div style="font-size:13px;margin-top:4px">Click <b>Add Employee</b> above to get started.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAYROLL TAB -->
+<div id="payroll" class="section">
+  <div class="section-header">
+    <h2>Run Payroll</h2>
+    <p>Select a period, enter present days, then calculate payroll</p>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-title">Payroll period</span></div>
+    <div class="card-body">
+      <div class="grid-2" style="max-width:320px">
+        <div class="field"><label>Month</label>
+          <select id="pMonth">
+            <option value="0">January</option><option value="1">February</option><option value="2">March</option>
+            <option value="3">April</option><option value="4">May</option><option value="5">June</option>
+            <option value="6">July</option><option value="7">August</option><option value="8">September</option>
+            <option value="9">October</option><option value="10">November</option><option value="11">December</option>
+          </select>
+        </div>
+        <div class="field"><label>Year</label><input id="pYear" type="number" value="2025" min="2000" max="2100"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="noEmpMsg" class="notice notice-warn" style="display:none">
+    ⚠️ No employees found in this organization. Go to the <b>Employees</b> tab to add employees first.
+  </div>
+
+  <div id="attendCard" class="card" style="display:none;overflow:hidden">
+    <div class="card-head">
+      <span class="card-title">Attendance</span>
+      <span id="periodLabel" style="font-size:14px;color:var(--text3);font-weight:500"></span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="tbl">
+        <thead><tr>
+          <th>ID</th><th>Name</th><th>Designation</th><th>Gross Pay</th>
+          <th style="text-align:center">Days in Month</th>
+          <th style="text-align:center">Present Days <i class="tb-i" data-help="Days the employee actually worked this month. Gross earned = pay ÷ days in month × present days. LOP (loss of pay) days are simply left out.">i</i></th>
+        </tr></thead>
+        <tbody id="attendBody"></tbody>
+      </table>
+    </div>
+    <div style="padding:1rem 1.25rem;border-top:1px solid var(--border);display:flex;gap:10px;align-items:center">
+      <button class="btn btn-primary" onclick="calcPayroll()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="11" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M5 7h4M7 5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Calculate Payroll
+      </button>
+      <span style="font-size:13px;color:var(--text3)">Enter present days for each employee, then click Calculate.</span>
+    </div>
+  </div>
+
+  <div id="resultsCard" class="card" style="display:none;overflow:hidden">
+    <div class="card-head">
+      <span class="card-title">Payroll results</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="bulkPrintPayslips()">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1.5" y="4" width="10" height="7" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M4 4V2.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5V4M4 9.5h5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Bulk Payslips
+        </button>
+        <button class="btn btn-sm" onclick="exportCSV()">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v8M4 6.5l2.5 2.5L9 6.5M1.5 11.5h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Export CSV
+        </button>
+      </div>
+    </div>
+    <div id="metricsWrap" style="padding:1rem 1.25rem;border-bottom:1px solid var(--border)"></div>
+    <div style="overflow-x:auto">
+      <table class="tbl">
+        <thead><tr>
+          <th>ID</th><th>Name</th><th>Designation</th>
+          <th style="text-align:center">Present</th>
+          <th>Gross Earned</th><th>PF</th><th>ESIC</th><th>PT</th>
+          <th>Total Ded.</th><th>Net Pay</th><th></th>
+        </tr></thead>
+        <tbody id="resultsBody"></tbody>
+        <tfoot id="resultsFoot"></tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS TAB -->
+<div id="settings" class="section">
+  <div class="section-header">
+    <h2>Settings</h2>
+    <p>Manage your PIN and app security</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-title">PIN protection</span></div>
+    <div class="card-body">
+      <p style="font-size:14px;color:var(--text2);margin-bottom:1.25rem">Your PIN is stored locally in this browser. It is required every time you open this file. Choose a 4-digit PIN you can remember.</p>
+
+      <div id="changePinForm">
+        <div class="grid-3" style="max-width:560px;margin-bottom:1rem">
+          <div class="field"><label>Current PIN</label><input type="password" id="curPin" maxlength="4" placeholder="••••" inputmode="numeric"></div>
+          <div class="field"><label>New PIN</label><input type="password" id="newPin" maxlength="4" placeholder="••••" inputmode="numeric"></div>
+          <div class="field"><label>Confirm New PIN</label><input type="password" id="confirmPin" maxlength="4" placeholder="••••" inputmode="numeric"></div>
+        </div>
+        <div id="changePinErr" class="err" style="display:none;margin-bottom:10px"></div>
+        <div id="changePinSuccess" class="notice notice-success" style="display:none;margin-bottom:10px"></div>
+        <button class="btn btn-primary" onclick="changePin()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="6" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 6V4.5a2.5 2.5 0 0 1 5 0V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Update PIN
+        </button>
+      </div>
+
+      <div class="divider"></div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:6px">Session</div>
+      <p style="font-size:14px;color:var(--text2);margin-bottom:1rem">Lock the app immediately and return to the PIN screen.</p>
+      <button class="btn btn-danger" onclick="lockApp()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="6" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 6V4.5a2.5 2.5 0 0 1 5 0V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Lock App
+      </button>
+    </div>
+  </div>
+</div>
+
+</div><!-- end wrap -->
+
+<script>
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DEFAULT_BREAKUP=[{name:'Basic',pct:50},{name:'HRA',pct:20},{name:'Conveyance Allowance',pct:10},{name:'Medical Allowance',pct:10},{name:'Special Allowance',pct:10}];
+const DEFAULT_PT_SLABS=[{upTo:7500,amt:0},{upTo:10000,amt:175},{upTo:null,amt:200}];
+
+let state={orgs:[],activeOrgId:null};
+let results=[];
+let editingEmpId=null;
+let newOrgPayType='monthly';
+
+/* ─── HELPERS ─── */
+function genId(){return 'org_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);}
+function getOrg(id){return state.orgs.find(o=>o.id===(id||state.activeOrgId));}
+function activeOrg(){return getOrg(state.activeOrgId);}
+function persist(){localStorage.setItem('pr_v5_state',JSON.stringify(state));}
+function fmtDate(d){if(!d)return '-';const p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function fmt(n){return '₹'+Math.round(n).toLocaleString('en-IN');}
+function daysInMonth(m,y){return new Date(y,m+1,0).getDate();}
+function isLeap(y){return(y%4===0&&y%100!==0)||y%400===0;}
+
+/* ─── DEDUCTION CALCULATIONS ─── */
+function calcPF(basicEarned, enabled){
+  if(!enabled) return 0;
+  const contrib = basicEarned * 0.12;
+  return Math.round(Math.min(contrib, 1800));
+}
+function calcESIC(grossEarned, enabled){
+  if(!enabled) return 0;
+  if(grossEarned > 21000) return 0;
+  return Math.round(grossEarned * 0.0075);
+}
+function calcPT(grossEarned, enabled, slabs){
+  if(!enabled) return 0;
+  const sorted = [...slabs].sort((a,b)=>(a.upTo||999999)-(b.upTo||999999));
+  for(const s of sorted){
+    if(s.upTo===null || grossEarned <= s.upTo) return s.amt;
+  }
+  return 0;
+}
+
+/* ─── INIT ─── */
+function loadState(){
+  const s=localStorage.getItem('pr_v5_state');
+  if(s){state=JSON.parse(s);if(!state.orgs)state.orgs=[];}
+  if(!state.orgs.length){
+    const id=genId();
+    state.orgs.push(makeOrg(id,'My Organization','monthly'));
+    state.activeOrgId=id;persist();
+  }
+  if(!state.activeOrgId||!getOrg()) state.activeOrgId=state.orgs[0].id;
+}
+function makeOrg(id,name,payType){
+  return{id,name,addr:'',email:'',phone:'',web:'',pf:'',esi:'',gst:'',payType,
+    deductions:{PF:true,ESIC:true,PT:true},
+    ptSlabs:JSON.parse(JSON.stringify(DEFAULT_PT_SLABS)),
+    breakup:JSON.parse(JSON.stringify(DEFAULT_BREAKUP)),
+    employees:[]};
+}
+function init(){
+  loadState();
+  renderOrgSwitcher();
+  loadOrgFields();
+  renderBreakupRows();
+  renderPTSlabRows();
+  renderDedCards();
+  renderEmpTable();
+  const n=new Date();
+  document.getElementById('pMonth').value=n.getMonth();
+  document.getElementById('pYear').value=n.getFullYear();
+  updateAttend();
+  document.getElementById('pMonth').onchange=updateAttend;
+  document.getElementById('pYear').onchange=updateAttend;
+  // PIN check — show pin screen if no valid session
+  if(!isSessionValid()){showPinScreen();}
+}
+
+/* ─── ORG SWITCHER ─── */
+function renderOrgSwitcher(){
+  const sel=document.getElementById('orgSwitcher');
+  sel.innerHTML=state.orgs.map(o=>`<option value="${o.id}" ${o.id===state.activeOrgId?'selected':''}>${o.name||'Unnamed Org'}</option>`).join('');
+  document.getElementById('delOrgBtn').style.display=state.orgs.length>1?'inline-flex':'none';
+}
+function switchOrg(id){
+  state.activeOrgId=id;persist();
+  loadOrgFields();renderBreakupRows();renderPTSlabRows();renderDedCards();
+  renderEmpTable();updateAttend();
+  document.getElementById('resultsCard').style.display='none';
+  results=[];
+  document.getElementById('orgSectionTitle').textContent=(activeOrg().name||'Organization')+' — Settings';
+}
+function openNewOrgModal(){document.getElementById('newOrgModal').classList.add('show');document.getElementById('newOrgName').value='';document.getElementById('newOrgErr').style.display='none';newOrgPayType='monthly';document.getElementById('newOrgPtM').classList.add('active');document.getElementById('newOrgPtA').classList.remove('active');}
+function closeNewOrgModal(){document.getElementById('newOrgModal').classList.remove('show');}
+function setNewOrgPt(t){newOrgPayType=t;document.getElementById('newOrgPtM').classList.toggle('active',t==='monthly');document.getElementById('newOrgPtA').classList.toggle('active',t==='annual');}
+function createOrg(){
+  const name=document.getElementById('newOrgName').value.trim();
+  if(!name){document.getElementById('newOrgErr').textContent='Please enter an organization name.';document.getElementById('newOrgErr').style.display='block';return;}
+  const id=genId();
+  state.orgs.push(makeOrg(id,name,newOrgPayType));
+  state.activeOrgId=id;persist();
+  closeNewOrgModal();renderOrgSwitcher();loadOrgFields();renderBreakupRows();renderPTSlabRows();renderDedCards();renderEmpTable();updateAttend();results=[];
+  document.getElementById('resultsCard').style.display='none';
+  showTab('org');
+}
+function deleteCurrentOrg(){
+  if(state.orgs.length<=1){alert('Cannot delete the only organization.');return;}
+  const o=activeOrg();
+  if(!confirm('Delete "'+o.name+'" and all its data? This cannot be undone.'))return;
+  state.orgs=state.orgs.filter(x=>x.id!==state.activeOrgId);
+  state.activeOrgId=state.orgs[0].id;persist();
+  renderOrgSwitcher();loadOrgFields();renderBreakupRows();renderPTSlabRows();renderDedCards();renderEmpTable();updateAttend();results=[];
+  document.getElementById('resultsCard').style.display='none';
+}
+
+/* ─── ORG FIELDS ─── */
+function loadOrgFields(){
+  const o=activeOrg();if(!o)return;
+  document.getElementById('orgName').value=o.name||'';
+  document.getElementById('orgAddr').value=o.addr||'';
+  document.getElementById('orgEmail').value=o.email||'';
+  document.getElementById('orgPhone').value=o.phone||'';
+  document.getElementById('orgWeb').value=o.web||'';
+  document.getElementById('orgPF').value=o.pf||'';
+  document.getElementById('orgESI').value=o.esi||'';
+  document.getElementById('orgGST').value=o.gst||'';
+  const badge=document.getElementById('orgPayTypeBadge');
+  badge.textContent=o.payType==='monthly'?'Monthly Pay':'Annual Pay';
+  badge.className='badge '+(o.payType==='monthly'?'badge-monthly':'badge-annual');
+  document.getElementById('orgSectionTitle').textContent=(o.name||'Organization')+' — Settings';
+}
+
+/* ─── DEDUCTIONS ─── */
+function toggleDed(key){
+  const o=activeOrg();
+  o.deductions[key]=!o.deductions[key];
+  renderDedCards();
+  if(key==='PT') document.getElementById('ptSlabSection').style.display=o.deductions.PT?'block':'none';
+}
+function renderDedCards(){
+  const o=activeOrg();
+  ['PF','ESIC','PT'].forEach(k=>{
+    const on=o.deductions[k];
+    document.getElementById('ded'+k).className='ded-card'+(on?' on':'');
+    const b=document.getElementById('ded'+k+'Badge');
+    b.textContent=on?'ON':'OFF';
+    b.className='badge '+(on?'badge-on':'badge-off');
+  });
+  document.getElementById('ptSlabSection').style.display=o.deductions.PT?'block':'none';
+}
+
+/* ─── PT SLABS ─── */
+function renderPTSlabRows(){
+  document.getElementById('ptSlabRows').innerHTML='';
+  const o=activeOrg();
+  const slabs=o.ptSlabs&&o.ptSlabs.length?o.ptSlabs:DEFAULT_PT_SLABS;
+  slabs.forEach(s=>addPTSlabRow(s.upTo,s.amt));
+}
+function addPTSlabRow(upTo,amt){
+  const wrap=document.getElementById('ptSlabRows');
+  const row=document.createElement('div');
+  row.className='slab-row';
+  row.innerHTML=`
+    <span style="color:var(--text2);font-weight:500;white-space:nowrap">Gross up to ₹</span>
+    <input class="slab-upto" type="number" min="0" placeholder="leave blank for last slab" value="${upTo!==null&&upTo!==''?upTo:''}" style="width:160px">
+    <span style="color:var(--text2);font-weight:500">→ PT ₹</span>
+    <input class="slab-amt" type="number" min="0" placeholder="0" value="${amt!==undefined&&amt!==''?amt:0}" style="width:90px">
+    <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">Remove</button>`;
+  wrap.appendChild(row);
+}
+
+/* ─── BREAKUP ─── */
+function renderBreakupRows(){
+  document.getElementById('breakupRows').innerHTML='';
+  const o=activeOrg();
+  const bk=o&&o.breakup&&o.breakup.length?o.breakup:DEFAULT_BREAKUP;
+  bk.forEach(b=>addBreakupRow(b.name,b.pct));
+  updatePctTotal();
+}
+function addBreakupRow(name,pct){
+  const wrap=document.getElementById('breakupRows');
+  const row=document.createElement('div');
+  row.className='pct-row brow';
+  row.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:10px';
+  row.innerHTML=`
+    <input class="bname" style="flex:2;min-width:160px" placeholder="Component name e.g. Basic, HRA" value="${name||''}">
+    <input class="bpct" type="number" min="0" max="100" step="0.1" placeholder="%" value="${pct||''}" style="width:90px;text-align:center">
+    <span style="font-size:14px;color:var(--text3);font-weight:500">%</span>
+    <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove();updatePctTotal()">Remove</button>`;
+  row.querySelector('.bpct').addEventListener('input',updatePctTotal);
+  wrap.appendChild(row);
+}
+function updatePctTotal(){
+  let total=0;
+  document.querySelectorAll('.bpct').forEach(i=>total+=parseFloat(i.value)||0);
+  const el=document.getElementById('pctTotal');
+  if(!document.querySelectorAll('.brow').length){el.style.display='none';return;}
+  el.style.display='block';
+  const ok=Math.abs(total-100)<0.05;
+  el.className='pct-total '+(ok?'pct-ok':'pct-bad');
+  el.textContent='Total: '+total.toFixed(1)+'%'+(ok?' ✓':' — must equal 100%');
+}
+
+/* ─── SAVE ORG ─── */
+function saveOrgData(){
+  const o=activeOrg();if(!o)return;
+  o.name=document.getElementById('orgName').value.trim()||o.name;
+  o.addr=document.getElementById('orgAddr').value.trim();
+  o.email=document.getElementById('orgEmail').value.trim();
+  o.phone=document.getElementById('orgPhone').value.trim();
+  o.web=document.getElementById('orgWeb').value.trim();
+  o.pf=document.getElementById('orgPF').value.trim();
+  o.esi=document.getElementById('orgESI').value.trim();
+  o.gst=document.getElementById('orgGST').value.trim();
+  // breakup
+  o.breakup=[];
+  document.querySelectorAll('.brow').forEach(row=>{
+    const n=row.querySelector('.bname').value.trim();
+    const p=parseFloat(row.querySelector('.bpct').value)||0;
+    if(n&&p>0)o.breakup.push({name:n,pct:p});
+  });
+  // pt slabs
+  o.ptSlabs=[];
+  document.querySelectorAll('.slab-row').forEach(row=>{
+    const upToVal=row.querySelector('.slab-upto').value.trim();
+    const amt=parseFloat(row.querySelector('.slab-amt').value)||0;
+    o.ptSlabs.push({upTo:upToVal===''?null:parseFloat(upToVal),amt});
+  });
+  persist();
+  renderOrgSwitcher();
+  const total=o.breakup.reduce((s,b)=>s+b.pct,0);
+  const msgEl=document.getElementById('orgSaveMsg');
+  msgEl.style.display='block';
+  if(Math.abs(total-100)<0.05){
+    msgEl.innerHTML='<div class="notice notice-success">✓ Organization saved successfully.</div>';
+  } else {
+    msgEl.innerHTML='<div class="notice notice-warn">⚠️ Saved, but breakup total is '+total.toFixed(1)+'%. Payslip will use simple mode until breakup totals 100%.</div>';
+  }
+  loadOrgFields();
+  setTimeout(()=>{msgEl.style.display='none';},4000);
+}
+
+/* ─── TABS ─── */
+function showTab(t){
+  const tabs=['guide','org','employees','payroll','settings'];
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active',tabs[i]===t));
+  tabs.forEach(id=>document.getElementById(id).classList.toggle('active',id===t));
+  if(t==='payroll')updateAttend();
+}
+
+/* ─── EMP FORM ─── */
+function openEmpForm(editId){
+  editingEmpId=editId||null;
+  const o=activeOrg();
+  document.getElementById('addCard').style.display='block';
+  document.getElementById('empFormTitle').textContent=editId?'Edit Employee':'New Employee';
+  document.getElementById('fPayLabel').textContent=(o.payType==='monthly'?'Gross Monthly':'Gross Annual')+' Pay (₹) *';
+  document.getElementById('ptLocked').textContent='Pay type for this organization: '+(o.payType==='monthly'?'Monthly Pay':'Annual Pay');
+  document.getElementById('fErr').style.display='none';
+  if(editId){
+    const e=o.employees.find(x=>x.id===editId);
+    if(e){
+      document.getElementById('fId').value=e.id;
+      document.getElementById('fId').disabled=true;
+      document.getElementById('fName').value=e.name;
+      document.getElementById('fDesig').value=e.desig;
+      document.getElementById('fDept').value=e.dept;
+      document.getElementById('fDoj').value=e.doj||'';
+      document.getElementById('fDob').value=e.dob||'';
+      document.getElementById('fPay').value=e.pay;
+    }
+  } else {
+    document.getElementById('fId').disabled=false;
+    ['fId','fName','fDesig','fDept','fPay'].forEach(x=>document.getElementById(x).value='');
+    document.getElementById('fDoj').value='';
+    document.getElementById('fDob').value='';
+  }
+  document.getElementById('addCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function closeEmpForm(){document.getElementById('addCard').style.display='none';editingEmpId=null;document.getElementById('fId').disabled=false;}
+function saveEmp(){
+  const o=activeOrg();
+  const id=document.getElementById('fId').value.trim();
+  const name=document.getElementById('fName').value.trim();
+  const desig=document.getElementById('fDesig').value.trim();
+  const dept=document.getElementById('fDept').value.trim();
+  const doj=document.getElementById('fDoj').value;
+  const dob=document.getElementById('fDob').value;
+  const pay=parseFloat(document.getElementById('fPay').value);
+  const errEl=document.getElementById('fErr');
+  if(!id||!name||!desig||!dept||isNaN(pay)||pay<=0){errEl.textContent='Please fill all required fields (*) with valid values.';errEl.style.display='block';return;}
+  if(!editingEmpId&&o.employees.find(e=>e.id===id)){errEl.textContent='Employee ID already exists in this organization.';errEl.style.display='block';return;}
+  errEl.style.display='none';
+  if(editingEmpId){
+    const idx=o.employees.findIndex(e=>e.id===editingEmpId);
+    o.employees[idx]={...o.employees[idx],name,desig,dept,doj,dob,pay};
+  } else {
+    o.employees.push({id,name,desig,dept,doj,dob,pay,payType:o.payType});
+  }
+  persist();renderEmpTable();closeEmpForm();updateAttend();
+}
+function delEmp(id){
+  if(!confirm('Remove this employee?'))return;
+  activeOrg().employees=activeOrg().employees.filter(e=>e.id!==id);
+  persist();renderEmpTable();updateAttend();
+}
+function renderEmpTable(){
+  const o=activeOrg();
+  const emps=o?o.employees:[];
+  document.getElementById('empSectionSub').textContent='Employees of '+( o?o.name:'—');
+  document.getElementById('empCount').textContent=emps.length?emps.length+' employee'+(emps.length>1?'s':''):'';
+  const w=document.getElementById('empTableWrap');
+  if(!emps.length){
+    w.innerHTML='<div class="empty"><div class="empty-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="7" r="4" stroke="#9ca3af" stroke-width="1.5"/><path d="M3 21c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="#9ca3af" stroke-width="1.5" stroke-linecap="round"/></svg></div><div>No employees yet.</div><div style="font-size:13px;margin-top:4px">Click <b>Add Employee</b> above to get started.</div></div>';
+    return;
+  }
+  w.innerHTML=`<div style="overflow-x:auto"><table class="tbl"><thead><tr>
+    <th>ID</th><th>Name</th><th>Designation</th><th>Department</th><th>Date of Joining</th><th>Date of Birth</th><th>Pay Type</th><th>Gross Pay</th><th></th>
+  </tr></thead><tbody>${emps.map(e=>`<tr>
+    <td style="font-weight:600;color:var(--blue)">${e.id}</td>
+    <td style="font-weight:500">${e.name}</td>
+    <td style="color:var(--text2)">${e.desig}</td>
+    <td style="color:var(--text2)">${e.dept}</td>
+    <td style="color:var(--text3)">${fmtDate(e.doj)}</td>
+    <td style="color:var(--text3)">${fmtDate(e.dob)}</td>
+    <td><span class="badge badge-${e.payType||o.payType}">${(e.payType||o.payType)==='monthly'?'Monthly':'Annual'}</span></td>
+    <td style="font-weight:600">₹${e.pay.toLocaleString('en-IN')}</td>
+    <td style="white-space:nowrap">
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-edit btn-sm" onclick="openEmpForm('${e.id}')">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8.5 1.5l2 2L4 10H2V8L8.5 1.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Edit
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="delEmp('${e.id}')">Remove</button>
+      </div>
+    </td>
+  </tr>`).join('')}</tbody></table></div>`;
+}
+
+/* ─── ATTEND & PAYROLL ─── */
+function updateAttend(){
+  const o=activeOrg();
+  const emps=o?o.employees:[];
+  document.getElementById('noEmpMsg').style.display=emps.length?'none':'block';
+  document.getElementById('attendCard').style.display=emps.length?'block':'none';
+  if(!emps.length)return;
+  const m=parseInt(document.getElementById('pMonth').value);
+  const y=parseInt(document.getElementById('pYear').value);
+  const dim=daysInMonth(m,y);
+  document.getElementById('periodLabel').textContent=MONTHS[m]+' '+y+' · '+dim+' days';
+  document.getElementById('attendBody').innerHTML=emps.map(e=>`<tr>
+    <td style="font-weight:600;color:var(--blue)">${e.id}</td>
+    <td style="font-weight:500">${e.name}</td>
+    <td style="color:var(--text2)">${e.desig}</td>
+    <td style="font-weight:500">₹${e.pay.toLocaleString('en-IN')}${(e.payType||o.payType)==='monthly'?'/mo':'/yr'}</td>
+    <td style="text-align:center;color:var(--text3);font-weight:500">${dim}</td>
+    <td style="text-align:center"><input type="number" class="att-input" min="0" max="${dim}" value="${dim}" id="pr_${e.id}"></td>
+  </tr>`).join('');
+}
+
+function calcPayroll(){
+  const o=activeOrg();
+  const m=parseInt(document.getElementById('pMonth').value);
+  const y=parseInt(document.getElementById('pYear').value);
+  const dim=daysInMonth(m,y);
+  const yd=isLeap(y)?366:365;
+  const ded=o.deductions||{PF:true,ESIC:true,PT:true};
+  const ptSlabs=o.ptSlabs&&o.ptSlabs.length?o.ptSlabs:DEFAULT_PT_SLABS;
+  const bk=o.breakup&&o.breakup.length?o.breakup:DEFAULT_BREAKUP;
+  const bkTotal=bk.reduce((s,b)=>s+b.pct,0);
+  const basicPct=(Math.abs(bkTotal-100)<0.05)?((bk.find(b=>b.name.toLowerCase().includes('basic'))||bk[0]).pct/100):0.5;
+
+  results=o.employees.map(e=>{
+    const pt=e.payType||o.payType;
+    const present=parseFloat(document.getElementById('pr_'+e.id).value)||0;
+    const dr=pt==='monthly'?e.pay/dim:e.pay/yd;
+    const grossEarned=dr*present;
+    const basicEarned=grossEarned*basicPct;
+    const pfAmt=calcPF(basicEarned,ded.PF);
+    const esicAmt=calcESIC(grossEarned,ded.ESIC);
+    const ptAmt=calcPT(grossEarned,ded.PT,ptSlabs);
+    const totalDed=pfAmt+esicAmt+ptAmt;
+    const net=grossEarned-totalDed;
+    return{...e,pt,present,dim,yd,dr,grossEarned,basicEarned,pfAmt,esicAmt,ptAmt,totalDed,net,month:MONTHS[m],year:y,monthNum:m,bk,bkTotal,basicPct};
+  });
+  renderResults();
+  document.getElementById('resultsCard').style.display='block';
+  document.getElementById('resultsCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderResults(){
+  document.getElementById('resultsBody').innerHTML=results.map(r=>`<tr>
+    <td style="font-weight:600;color:var(--blue)">${r.id}</td>
+    <td style="font-weight:500">${r.name}</td>
+    <td style="color:var(--text2)">${r.desig}</td>
+    <td style="text-align:center;font-weight:500">${r.present}</td>
+    <td style="font-weight:500">${fmt(r.grossEarned)}</td>
+    <td style="color:var(--red)">${r.pfAmt?fmt(r.pfAmt):'—'}</td>
+    <td style="color:var(--red)">${r.esicAmt?fmt(r.esicAmt):'—'}</td>
+    <td style="color:var(--red)">${r.ptAmt?fmt(r.ptAmt):'—'}</td>
+    <td style="color:var(--red);font-weight:500">${fmt(r.totalDed)}</td>
+    <td style="font-weight:700;color:var(--blue)">${fmt(r.net)}</td>
+    <td><button class="btn btn-sm btn-edit" onclick="showPayslip('${r.id}')">View Payslip</button></td>
+  </tr>`).join('');
+  const tGross=results.reduce((s,r)=>s+r.grossEarned,0);
+  const tDed=results.reduce((s,r)=>s+r.totalDed,0);
+  const tNet=results.reduce((s,r)=>s+r.net,0);
+  document.getElementById('resultsFoot').innerHTML=`<tr>
+    <td colspan="4" style="font-weight:600">Total (${results.length} employees)</td>
+    <td style="font-weight:600">${fmt(tGross)}</td>
+    <td colspan="3"></td>
+    <td style="font-weight:600;color:var(--red)">${fmt(tDed)}</td>
+    <td style="font-weight:700;color:var(--blue)">${fmt(tNet)}</td>
+    <td></td>
+  </tr>`;
+  document.getElementById('metricsWrap').innerHTML=`<div class="metrics">
+    <div class="metric"><div class="metric-lbl">Employees Processed</div><div class="metric-val">${results.length}</div></div>
+    <div class="metric"><div class="metric-lbl">Total Deductions</div><div class="metric-val">${fmt(tDed)}</div></div>
+    <div class="metric"><div class="metric-lbl">Total Net Pay</div><div class="metric-val">${fmt(tNet)}</div></div>
+  </div>`;
+}
+
+/* ─── PAYSLIP ─── */
+function buildPayslipHTML(r, o){
+  const bkOk=Math.abs(r.bkTotal-100)<0.05&&r.bk&&r.bk.length;
+  let earningsRows='';
+  if(bkOk){
+    r.bk.forEach(b=>{earningsRows+=`<div class="ps-row"><span>${b.name}</span><span>${fmt(r.grossEarned*(b.pct/100))}</span></div>`;});
+  } else {
+    earningsRows=`<div class="ps-row"><span>Base Pay Earned</span><span>${fmt(r.grossEarned)}</span></div>`;
+  }
+  let dedRows='';
+  if(r.pfAmt) dedRows+=`<div class="ps-row"><span>Provident Fund (PF)</span><span>${fmt(r.pfAmt)}</span></div>`;
+  if(r.esicAmt) dedRows+=`<div class="ps-row"><span>ESIC</span><span>${fmt(r.esicAmt)}</span></div>`;
+  if(r.ptAmt) dedRows+=`<div class="ps-row"><span>Professional Tax</span><span>${fmt(r.ptAmt)}</span></div>`;
+  if(!dedRows) dedRows=`<div class="ps-row"><span>No deductions</span><span>₹0</span></div>`;
+  return `
+    <div class="ps-top">
+      <div><div class="ps-company">${o.name||'Company Name'}</div><div class="ps-addr">${o.addr||''}</div></div>
+      <div><div class="ps-slip-label">Pay Slip for</div><div class="ps-period-val">${r.month} ${r.year}</div></div>
+    </div>
+    <div class="ps-info-grid">
+      <div class="ps-info-col">
+        <div class="ps-kv"><span class="ps-key">Employee ID</span><span class="ps-val">${r.id}</span></div>
+        <div class="ps-kv"><span class="ps-key">Employee Name</span><span class="ps-val">${r.name}</span></div>
+        <div class="ps-kv"><span class="ps-key">Designation</span><span class="ps-val">${r.desig}</span></div>
+        <div class="ps-kv"><span class="ps-key">Department</span><span class="ps-val">${r.dept}</span></div>
+        <div class="ps-kv"><span class="ps-key">Date of Joining</span><span class="ps-val">${fmtDate(r.doj)}</span></div>
+        <div class="ps-kv"><span class="ps-key">Date of Birth</span><span class="ps-val">${fmtDate(r.dob)}</span></div>
+      </div>
+      <div class="ps-info-col">
+        <div class="ps-kv"><span class="ps-key">Gross Wages</span><span class="ps-val">${fmt(r.pay)}${r.pt==='monthly'?'/mo':'/yr'}</span></div>
+        <div class="ps-kv"><span class="ps-key">Total Working Days</span><span class="ps-val">${r.dim}</span></div>
+        <div class="ps-kv"><span class="ps-key">Present Days</span><span class="ps-val">${r.present}</span></div>
+        <div class="ps-kv"><span class="ps-key">Paid Days</span><span class="ps-val">${r.present}</span></div>
+      </div>
+    </div>
+    <div class="ps-body">
+      <div class="ps-col">
+        <div class="ps-col-head">Earnings</div>
+        ${earningsRows}
+        <div class="ps-row ps-total"><span>Total Earnings</span><span>${fmt(r.grossEarned)}</span></div>
+      </div>
+      <div class="ps-col" style="border-right:none">
+        <div class="ps-col-head">Deductions</div>
+        ${dedRows}
+        <div class="ps-row ps-total"><span>Total Deductions</span><span>${fmt(r.totalDed)}</span></div>
+      </div>
+    </div>
+    <div class="ps-net-bar">
+      <span class="ps-net-lbl">Net Salary</span>
+      <span class="ps-net-val">${fmt(r.net)}</span>
+    </div>`;
+}
+
+function showPayslip(id){
+  const o=activeOrg();
+  const r=results.find(x=>x.id===id);if(!r)return;
+  const overlay=document.getElementById('payslipOverlay');
+  document.getElementById('psWrap').innerHTML=buildPayslipHTML(r,o)+`<div class="ps-actions-bar">
+    <button class="btn btn-primary btn-sm" onclick="printSinglePayslip('${id}')">Print Payslip</button>
+    <button class="btn btn-sm" onclick="closePayslip()">Close</button>
+  </div>`;
+  overlay.style.display='flex';
+  overlay.scrollTop=0;
+}
+function closePayslip(){document.getElementById('payslipOverlay').style.display='none';}
+
+function getPayslipPrintStyles(){
+  return `*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;font-size:13px;color:#111;background:#fff}
+.ps-wrap{background:#fff;max-width:680px;margin:0 auto;overflow:hidden;border:1px solid #ccc;page-break-after:always}
+.ps-wrap:last-child{page-break-after:avoid}
+.ps-top{background:#1a5fb4;padding:1.5rem 2rem;display:flex;justify-content:space-between;align-items:flex-start}
+.ps-company{font-size:18px;font-weight:700;color:#fff}.ps-addr{font-size:12px;color:rgba(255,255,255,.78);margin-top:3px}
+.ps-slip-label{font-size:11px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.06em;text-align:right;margin-bottom:2px}
+.ps-period-val{font-size:14px;font-weight:700;color:#fff;text-align:right}
+.ps-info-grid{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #e5e7eb}
+.ps-info-col{padding:1rem 1.75rem}.ps-info-col:first-child{border-right:1px solid #e5e7eb}
+.ps-kv{display:flex;justify-content:space-between;padding:4px 0;font-size:13px;border-bottom:.5px solid #f3f4f6}
+.ps-kv:last-child{border-bottom:none}.ps-key{color:#6b7280}.ps-val{font-weight:600;color:#111}
+.ps-body{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #e5e7eb}
+.ps-col{border-right:1px solid #e5e7eb}.ps-col:last-child{border-right:none}
+.ps-col-head{padding:9px 1.75rem;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#1a5fb4;background:#eef4fb;border-bottom:1px solid #dde8f5}
+.ps-row{display:flex;justify-content:space-between;padding:8px 1.75rem;border-bottom:.5px solid #f3f4f6;font-size:13px}
+.ps-row:last-child{border-bottom:none}
+.ps-row.ps-total{font-weight:700;background:#f8faff;border-top:1px solid #e5e7eb;border-bottom:none;font-size:14px}
+.ps-net-bar{display:flex;justify-content:space-between;align-items:center;padding:16px 1.75rem;background:#1a5fb4}
+.ps-net-lbl{font-size:14px;font-weight:600;color:rgba(255,255,255,.85)}.ps-net-val{font-size:24px;font-weight:700;color:#fff}
+.ps-actions-bar{display:none}
+@page{margin:1cm;size:A4}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`;
+}
+
+function printSinglePayslip(id){
+  const o=activeOrg();
+  const r=results.find(x=>x.id===id)||results[0];if(!r)return;
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>Payslip — ${r.name}</title><style>${getPayslipPrintStyles()}</style></head><body><div class="ps-wrap">${buildPayslipHTML(r,o)}</div></body></html>`);
+  w.document.close();
+  w.onload=()=>w.print();
+}
+
+function bulkPrintPayslips(){
+  if(!results.length){alert('No payroll results. Run payroll first.');return;}
+  const o=activeOrg();
+  const allHTML=results.map(r=>`<div class="ps-wrap">${buildPayslipHTML(r,o)}</div>`).join('\n');
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>Payslips — ${o.name} — ${results[0].month} ${results[0].year}</title><style>${getPayslipPrintStyles()}</style></head><body>${allHTML}</body></html>`);
+  w.document.close();
+  w.onload=()=>w.print();
+}
+
+/* ─── IMPORT / EXPORT ─── */
+function exportCSV(){
+  if(!results.length)return;
+  const o=activeOrg();
+  const h=['ID','Name','Designation','Department','Pay Type','Gross Pay','Present Days','Gross Earned','PF','ESIC','PT','Total Deductions','Net Pay','Period','Organization'];
+  const rows=results.map(r=>[r.id,r.name,r.desig,r.dept,r.pt,Math.round(r.pay),r.present,Math.round(r.grossEarned),Math.round(r.pfAmt),Math.round(r.esicAmt),Math.round(r.ptAmt),Math.round(r.totalDed),Math.round(r.net),r.month+' '+r.year,o.name]);
+  dl('payroll_'+results[0].month+'_'+results[0].year+'.csv',[h,...rows].map(r=>r.join(',')).join('\n'),'text/csv');
+}
+function exportJSON(){
+  const o=activeOrg();
+  dl((o.name||'org').replace(/\s+/g,'_')+'_employees.json',JSON.stringify({orgName:o.name,payType:o.payType,employees:o.employees},null,2),'application/json');
+}
+function importJSON(e){
+  const f=e.target.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      const o=activeOrg();
+      if(d.employees&&Array.isArray(d.employees)){
+        if(d.payType&&d.payType!==o.payType){if(!confirm('Imported file uses "'+d.payType+'" pay but this org uses "'+o.payType+'". Import anyway?'))return;}
+        o.employees=d.employees;persist();renderEmpTable();updateAttend();
+      } else alert('Invalid file format.');
+    }catch{alert('Could not parse file.');}
+  };
+  reader.readAsText(f);e.target.value='';
+}
+function dl(name,content,type){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type}));
+  a.download=name;a.click();
+}
+
+/* ─── PIN ─── */
+const PIN_KEY='pr_v5_pin';
+const PIN_SESSION='pr_v5_session';
+const MAX_ATTEMPTS=5;
+
+let pinBuffer='';
+let pinMode='unlock'; // 'unlock' | 'setup' | 'setup-confirm'
+let pinSetupFirst='';
+let pinAttemptCount=0;
+
+function hashPin(pin){
+  // simple deterministic hash — not cryptographic but prevents plain-text storage
+  let h=0;
+  for(let i=0;i<pin.length;i++){h=((h<<5)-h)+pin.charCodeAt(i);h|=0;}
+  return h.toString(36)+'_'+pin.length;
+}
+
+function getStoredPin(){return localStorage.getItem(PIN_KEY);}
+function setStoredPin(pin){localStorage.setItem(PIN_KEY,hashPin(pin));}
+function checkPin(pin){return getStoredPin()===hashPin(pin);}
+
+function isSessionValid(){return!!sessionStorage.getItem(PIN_SESSION);}
+function markSession(){sessionStorage.setItem(PIN_SESSION,'1');}
+function clearSession(){sessionStorage.removeItem(PIN_SESSION);}
+
+function showPinScreen(){
+  pinBuffer='';pinAttemptCount=0;
+  const hasPin=!!getStoredPin();
+  const screen=document.getElementById('pinScreen');
+  if(!hasPin){
+    pinMode='setup';
+    document.getElementById('pinTitle').textContent='Set up your PIN';
+    document.getElementById('pinSubtitle').textContent='Choose a 4-digit PIN to protect your payroll data. You\'ll need this every time you open the file.';
+  } else {
+    pinMode='unlock';
+    document.getElementById('pinTitle').textContent='Welcome back';
+    document.getElementById('pinSubtitle').textContent='Enter your 4-digit PIN to access Payroll Tool';
+  }
+  updatePinDots();
+  document.getElementById('pinErr').textContent='';
+  document.getElementById('pinAttempts').textContent='';
+  screen.classList.add('show');
+}
+
+function hidePinScreen(){document.getElementById('pinScreen').classList.remove('show');}
+
+function updatePinDots(){
+  for(let i=0;i<4;i++){
+    const dot=document.getElementById('dot'+i);
+    dot.classList.toggle('filled',i<pinBuffer.length);
+  }
+}
+
+function pinKey(d){
+  if(pinBuffer.length>=4)return;
+  pinBuffer+=d;
+  updatePinDots();
+  document.getElementById('pinErr').textContent='';
+  if(pinBuffer.length===4) setTimeout(processPinEntry,120);
+}
+
+function pinBackspace(){
+  pinBuffer=pinBuffer.slice(0,-1);
+  updatePinDots();
+}
+
+function processPinEntry(){
+  if(pinMode==='unlock'){
+    if(checkPin(pinBuffer)){
+      markSession();hidePinScreen();
+    } else {
+      pinAttemptCount++;
+      const rem=MAX_ATTEMPTS-pinAttemptCount;
+      shakeDots();
+      document.getElementById('pinErr').textContent='Incorrect PIN. Please try again.';
+      document.getElementById('pinAttempts').textContent=rem>0?rem+' attempt'+(rem>1?'s':'')+' remaining':'';
+      if(pinAttemptCount>=MAX_ATTEMPTS){
+        document.getElementById('pinErr').textContent='Too many incorrect attempts. Please wait 30 seconds.';
+        disablePinKeys(30);
+      }
+    }
+    pinBuffer='';updatePinDots();
+  } else if(pinMode==='setup'){
+    if(pinBuffer.length<4){document.getElementById('pinErr').textContent='PIN must be 4 digits.';pinBuffer='';updatePinDots();return;}
+    pinSetupFirst=pinBuffer;pinBuffer='';
+    pinMode='setup-confirm';
+    document.getElementById('pinTitle').textContent='Confirm your PIN';
+    document.getElementById('pinSubtitle').textContent='Enter your PIN again to confirm';
+    updatePinDots();
+  } else if(pinMode==='setup-confirm'){
+    if(pinBuffer===pinSetupFirst){
+      setStoredPin(pinBuffer);markSession();hidePinScreen();
+    } else {
+      shakeDots();
+      document.getElementById('pinErr').textContent='PINs do not match. Try again.';
+      pinBuffer='';pinSetupFirst='';pinMode='setup';
+      document.getElementById('pinTitle').textContent='Set up your PIN';
+      document.getElementById('pinSubtitle').textContent='Choose a 4-digit PIN to protect your payroll data.';
+      updatePinDots();
+    }
+  }
+}
+
+function shakeDots(){
+  const dots=document.getElementById('pinDots');
+  dots.querySelectorAll('.pin-dot').forEach(d=>{d.classList.add('shake');setTimeout(()=>d.classList.remove('shake'),400);});
+}
+
+function disablePinKeys(secs){
+  const keys=document.querySelectorAll('.pin-key');
+  keys.forEach(k=>k.disabled=true);
+  let remaining=secs;
+  const t=setInterval(()=>{
+    remaining--;
+    document.getElementById('pinAttempts').textContent='Try again in '+remaining+'s';
+    if(remaining<=0){
+      clearInterval(t);
+      keys.forEach(k=>k.disabled=false);
+      pinAttemptCount=0;
+      pinBuffer='';updatePinDots();
+      document.getElementById('pinErr').textContent='';
+      document.getElementById('pinAttempts').textContent='';
+    }
+  },1000);
+}
+
+function lockApp(){clearSession();showPinScreen();}
+
+function changePin(){
+  const cur=document.getElementById('curPin').value.trim();
+  const nw=document.getElementById('newPin').value.trim();
+  const conf=document.getElementById('confirmPin').value.trim();
+  const errEl=document.getElementById('changePinErr');
+  const okEl=document.getElementById('changePinSuccess');
+  errEl.style.display='none';okEl.style.display='none';
+  if(!checkPin(cur)){errEl.textContent='Current PIN is incorrect.';errEl.style.display='block';return;}
+  if(nw.length!==4||!/^\d{4}$/.test(nw)){errEl.textContent='New PIN must be exactly 4 digits.';errEl.style.display='block';return;}
+  if(nw!==conf){errEl.textContent='New PIN and confirmation do not match.';errEl.style.display='block';return;}
+  setStoredPin(nw);
+  document.getElementById('curPin').value='';
+  document.getElementById('newPin').value='';
+  document.getElementById('confirmPin').value='';
+  okEl.textContent='✓ PIN updated successfully.';okEl.style.display='block';
+  setTimeout(()=>okEl.style.display='none',4000);
+}
+
+init();
+</script>
+</body>
+</html>

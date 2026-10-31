@@ -6,6 +6,8 @@
     <title>Computation of Income Generator</title>
     <meta name="description" content="Upload an ITR JSON (ITR-1 to ITR-6) and generate a ready-to-print Computation of Income with schedules, P&L, Balance Sheet and taxes paid. Runs entirely in your browser.">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="/toolbox.css">
+<script src="/toolbox.js" data-tool="Computation of Income" defer></script>
     <style>
         :root {
             --text-color: #000;
@@ -175,13 +177,12 @@
     <!-- CONTROLS -->
     <div class="controls" id="web-controls">
         <div class="file-upload-wrapper">
-            <button onclick="location.href='/'" title="Back to CA Toolbox">← CA Toolbox</button>
-            <label for="jsonFileInput" class="bold">Import Client JSON:</label>
+            <label for="jsonFileInput" class="bold">Import Client JSON: <i class="tb-i" data-help="Upload the JSON file downloaded from the income tax portal for your client (ITR-1 to ITR-6). The computation fills in automatically — nothing is uploaded anywhere.">i</i></label>
             <input type="file" id="jsonFileInput" accept=".json" onchange="handleFileUpload(event)">
         </div>
         
         <div class="file-upload-wrapper">
-            <label for="itrSelector" class="bold">Form Type:</label>
+            <label for="itrSelector" class="bold">Form Type: <i class="tb-i" data-help="Controls which schedules and sections of the computation are shown (e.g. Salary appears for ITR-1/2, Business & P&L for ITR-3/5/6). It is auto-detected from the JSON but you can override it.">i</i></label>
             <select id="itrSelector" onchange="updateComputationFormat()">
                 <option value="ITR-1">ITR-1</option>
                 <option value="ITR-2">ITR-2</option>

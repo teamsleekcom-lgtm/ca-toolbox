@@ -1,0 +1,109 @@
+/* ============================================================
+   CA Toolbox — shared chrome for all hosted tools
+   Include in every tool:
+     <link rel="stylesheet" href="/toolbox.css">
+     <script src="/toolbox.js" data-tool="Tool Name" defer></script>
+   ============================================================ */
+
+/* ── Standard top bar ── */
+.tb-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 40px;
+  z-index: 5000;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  color: #111827;
+  box-sizing: border-box;
+}
+.tb-bar * { box-sizing: border-box; }
+.tb-bar a {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tb-bar a:hover { text-decoration: underline; }
+.tb-bar .tb-sep { color: #d1d5db; }
+.tb-bar .tb-name {
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tb-bar .tb-privacy {
+  margin-left: auto;
+  color: #6b7280;
+  font-size: 12px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ── Standard footer (skipped when the tool has its own) ── */
+.tb-footer {
+  text-align: center;
+  padding: 18px 16px 22px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 12px;
+  color: #9ca3af;
+  width: 100%;
+}
+
+/* ── ⓘ inline help button ── */
+.tb-i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  min-width: 15px;
+  border-radius: 50%;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #64748b;
+  font: 600 10px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-style: normal;
+  cursor: help;
+  user-select: none;
+  vertical-align: middle;
+  margin: 0 3px;
+  padding: 0;
+}
+.tb-i:hover { background: #eef2ff; border-color: #93c5fd; color: #2563eb; }
+
+/* ── Help popover ── */
+.tb-pop {
+  position: fixed;
+  z-index: 6000;
+  max-width: 270px;
+  background: #111827;
+  color: #f9fafb;
+  font: 400 12px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  padding: 10px 12px;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+/* ── Layout adjustments so the fixed bar never covers tool UI ── */
+body.has-tbbar { padding-top: 40px !important; }
+body.has-tbbar #sidebar { top: 40px !important; height: calc(100vh - 40px) !important; }  /* Litigation Tracker */
+body.has-tbbar .bar { top: 40px !important; }   /* e-Signer sticky toolbar */
+body.has-tbbar #hdr { top: 40px !important; }   /* Fixed Asset Manager sticky header */
+
+/* ── Print: chrome and help never appear on paper ── */
+@media print {
+  .tb-bar, .tb-footer, .tb-i, .tb-pop { display: none !important; }
+  body.has-tbbar { padding-top: 0 !important; }
+  body.has-tbbar #sidebar { top: 0 !important; height: 100vh !important; }
+  body.has-tbbar .bar, body.has-tbbar #hdr { top: 0 !important; }
+}

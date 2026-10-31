@@ -1,0 +1,538 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GSTR-1 ↔ Tally Sales Reconciliation</title>
+<meta name="description" content="Reconcile your GSTR-1 (JSON, Excel or CSV) against your Tally sales register invoice-by-invoice and spot value mismatches instantly. Runs entirely in your browser.">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="/toolbox.css">
+<script src="/toolbox.js" data-tool="GSTR-1 ↔ Tally Recon" defer></script>
+<style>
+/* Design-system variables the UI references (previously undefined) */
+:root{--color-background-primary:#ffffff;--color-background-secondary:#f1f5f9;--color-background-tertiary:#eef2f7;--color-border-secondary:#cbd5e1;--color-border-tertiary:#e2e8f0;--color-text-primary:#0f172a;--color-text-secondary:#64748b;--dot-color:#3b82f6}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--color-background-tertiary);color:var(--color-text-primary);font-size:13px}
+.header{background:linear-gradient(135deg,#0f2e58 0%,#1d4ed8 100%);color:#fff;padding:18px 22px 24px}
+.header h1{font-size:18px;font-weight:500;letter-spacing:-0.3px;margin-bottom:4px}
+.header p{opacity:.72;font-size:12px}
+.demo-btn{background:rgba(255,255,255,.15);border:0.5px solid rgba(255,255,255,.35);color:#fff;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500}
+.demo-btn:hover{background:rgba(255,255,255,.25)}
+.body{max-width:1100px;margin:0 auto;padding:18px 14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px 20px}
+.card-title{font-weight:500;font-size:14px;margin-bottom:2px}
+.card-sub{font-size:11px;color:var(--color-text-secondary)}
+.dropzone{border:1.5px dashed var(--color-border-secondary);border-radius:8px;padding:20px 14px;text-align:center;cursor:pointer;transition:all .18s;margin-top:12px;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.dropzone:hover,.dropzone.drag{border-color:#3b82f6;background:rgba(59,130,246,.06)}
+.dropzone.ok{border-color:#22c55e;background:rgba(34,197,94,.06)}
+.dropzone.err{border-color:#ef4444;background:rgba(239,68,68,.06)}
+.dz-icon{font-size:22px;color:var(--color-text-secondary)}
+.dz-main{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.dz-sub{font-size:11px;color:var(--color-text-secondary)}
+.dz-ok{font-size:13px;font-weight:500;color:#16a34a}
+.dz-err{font-size:12px;color:#dc2626}
+.hints{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:8px;padding:10px 14px;margin-top:10px;font-size:11px;color:var(--color-text-secondary)}
+.hints b{color:var(--color-text-primary);font-weight:500}
+code{background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;font-size:10.5px;font-family:monospace}
+.run-wrap{text-align:center;margin:20px 0}
+.run-btn{padding:12px 44px;font-size:14px;font-weight:500;border-radius:10px;border:none;cursor:pointer;transition:all .2s;letter-spacing:-0.2px}
+.run-btn.active{background:linear-gradient(135deg,#0f2e58,#1d4ed8);color:#fff;box-shadow:0 4px 16px rgba(29,78,216,.28)}
+.run-btn.active:hover{box-shadow:0 6px 20px rgba(29,78,216,.38)}
+.run-btn.inactive{background:var(--color-background-secondary);color:var(--color-text-secondary);cursor:not-allowed}
+.run-hint{margin-top:8px;font-size:11px;color:var(--color-text-secondary)}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.scard{background:var(--color-background-primary);border:1.5px solid transparent;border-radius:12px;padding:14px 16px;cursor:pointer;transition:border .15s}
+.scard:hover{border-color:var(--color-border-secondary)}
+.scard.active{border-color:var(--dot-color)}
+.scard-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;display:inline-block;margin-bottom:10px}
+.scard-num{font-size:28px;font-weight:500;line-height:1}
+.scard-pct{font-size:11px;color:var(--color-text-secondary);margin-top:3px}
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap}
+.filter-row{display:flex;gap:5px;flex-wrap:wrap}
+.fbtn{padding:5px 10px;border-radius:6px;font-size:11px;font-weight:500;border:0.5px solid var(--color-border-secondary);cursor:pointer;transition:all .15s;background:var(--color-background-primary);color:var(--color-text-secondary)}
+.fbtn.active{background:#0f2e58;color:#fff;border-color:#0f2e58}
+.exp-btn{background:#16a34a;color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap}
+.exp-btn:hover{background:#15803d}
+.tbl-wrap{background:var(--color-background-primary);border-radius:12px;border:0.5px solid var(--color-border-tertiary);overflow:hidden}
+.tbl-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr{background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary)}
+th{padding:9px 11px;text-align:left;font-size:10px;font-weight:600;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.35px;white-space:nowrap}
+th.r{text-align:right}
+td{padding:10px 11px;border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:top}
+td.r{text-align:right;font-family:monospace;font-size:11.5px;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr.even td{background:var(--color-background-secondary)}
+tr.mismatch-row{cursor:pointer}
+tr.mismatch-row:hover td{background:rgba(239,68,68,.04)}
+tr.expand-detail td{background:#fffbeb;border-bottom:0.5px solid #fde68a}
+tr.totals-row td{background:var(--color-background-secondary);border-top:1.5px solid var(--color-border-secondary);font-weight:500}
+.badge{padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:600;white-space:nowrap;display:inline-block}
+.inv-no{font-family:monospace;font-weight:600;font-size:12px}
+.g1-val{color:var(--color-text-primary)}
+.t-val{color:var(--color-text-secondary);font-size:10.5px;margin-top:2px}
+.diff-val{color:#dc2626;font-weight:600}
+.diff-t-val{color:#b45309;font-size:10.5px;margin-top:2px}
+.expand-icon{color:var(--color-text-secondary);font-size:11px;user-select:none}
+.detail-table{border-collapse:collapse;font-size:12px;width:auto}
+.detail-table th{text-align:left;padding:4px 18px 4px 0;font-size:11px;color:var(--color-text-secondary);text-transform:none;letter-spacing:0;background:transparent}
+.detail-table td{padding:5px 18px 5px 0;border-bottom:0.5px solid #fde68a;background:transparent}
+.detail-table td.dr{text-align:right;padding:5px 0 5px 18px;font-family:monospace;color:#dc2626;font-weight:600}
+.empty{padding:36px;text-align:center;color:var(--color-text-secondary)}
+.legend{margin-top:12px;display:flex;gap:20px;flex-wrap:wrap;font-size:11px;color:var(--color-text-secondary)}
+.det-cols{margin-top:8px;font-size:10.5px;color:var(--color-text-secondary)}
+.det-cols span{display:inline-block;background:var(--color-background-secondary);padding:1px 6px;border-radius:4px;margin:2px 2px 0 0;font-size:10.5px}
+.dl-link{font-size:11px;color:#3b82f6;background:none;border:none;cursor:pointer;padding:0;margin-top:6px;text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="header">
+  <div style="display:flex;justify-content:space-between;align-items:center;max-width:1100px;margin:0 auto">
+    <div>
+      <h1><i class="ti ti-refresh" aria-hidden="true" style="font-size:18px;vertical-align:-2px;margin-right:6px"></i>GSTR-1 ↔ Tally Sales Reconciliation</h1>
+      <p>Find mismatches between your GST return and Tally books — upload both files and hit Reconcile</p>
+    </div>
+    <button class="demo-btn" onclick="loadDemo()">
+      <i class="ti ti-player-play" aria-hidden="true" style="font-size:13px;vertical-align:-1px;margin-right:4px"></i>Load sample data
+    </button>
+  </div>
+</div>
+
+<div class="body">
+  <div class="grid2">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="width:10px;height:10px;border-radius:50%;background:#22c55e;display:inline-block"></span>
+        <span class="card-title">GSTR-1</span> <i class="tb-i" data-help="Best source: the JSON downloaded from the GST portal (Returns → GSTR-1 → File detail). Excel/CSV exports also work if they contain the columns listed below.">i</i>
+      </div>
+      <div class="card-sub">JSON (GST Portal) · Excel · CSV</div>
+      <div id="dz-g" class="dropzone" onclick="document.getElementById('inp-g').click()" ondragover="dzOver(event,'g')" ondragleave="dzLeave('g')" ondrop="dzDrop(event,'g')">
+        <input type="file" id="inp-g" accept=".json,.csv,.xlsx,.xls" style="display:none" onchange="handleFile(this.files[0],'g')">
+        <i class="ti ti-upload dz-icon" aria-hidden="true"></i>
+        <div class="dz-main">Drop file here or click to upload</div>
+        <div class="dz-sub">Supports JSON · XLSX · CSV</div>
+      </div>
+      <div id="det-g" class="det-cols" style="display:none"></div>
+      <div class="hints"><b>Column names:</b> <code>Invoice No</code> · <code>Date</code> · <code>GSTIN</code> · <code>Taxable Value</code> · <code>CGST</code> · <code>SGST</code> · <code>IGST</code> · <code>Invoice Value</code></div>
+      <button class="dl-link" onclick="dlTemplate('g')"><i class="ti ti-download" style="font-size:11px;vertical-align:-1px;margin-right:3px" aria-hidden="true"></i>Download CSV template</button>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;display:inline-block"></span>
+        <span class="card-title">Tally Sales Register</span> <i class="tb-i" data-help="Export your sales register or day book from Tally (Excel or CSV). Column names are auto-detected — e.g. 'Voucher No.', 'Central Tax', 'State Tax'.">i</i>
+      </div>
+      <div class="card-sub">Excel or CSV export from Tally ERP</div>
+      <div id="dz-t" class="dropzone" onclick="document.getElementById('inp-t').click()" ondragover="dzOver(event,'t')" ondragleave="dzLeave('t')" ondrop="dzDrop(event,'t')">
+        <input type="file" id="inp-t" accept=".json,.csv,.xlsx,.xls" style="display:none" onchange="handleFile(this.files[0],'t')">
+        <i class="ti ti-upload dz-icon" aria-hidden="true"></i>
+        <div class="dz-main">Drop file here or click to upload</div>
+        <div class="dz-sub">Supports XLSX · CSV</div>
+      </div>
+      <div id="det-t" class="det-cols" style="display:none"></div>
+      <div class="hints"><b>Column names:</b> <code>Voucher No.</code> · <code>Date</code> · <code>Party's Name</code> · <code>GSTIN/UIN</code> · <code>Taxable Value</code> · <code>Central Tax</code> · <code>State Tax</code> · <code>Integrated Tax</code> · <code>Invoice Value</code></div>
+      <button class="dl-link" onclick="dlTemplate('t')"><i class="ti ti-download" style="font-size:11px;vertical-align:-1px;margin-right:3px" aria-hidden="true"></i>Download CSV template</button>
+    </div>
+  </div>
+
+  <div class="run-wrap">
+    <button id="run-btn" class="run-btn inactive" onclick="doReconcile()">
+      <i class="ti ti-refresh" aria-hidden="true" style="font-size:15px;vertical-align:-2px;margin-right:6px"></i>Run Reconciliation
+    </button>
+    <div id="run-hint" class="run-hint">Upload both files to enable reconciliation</div>
+  </div>
+
+  <div id="results" style="display:none">
+    <div class="summary-grid" id="summary-cards"></div>
+    <div class="toolbar">
+      <div class="filter-row" id="filter-row"></div>
+      <button class="exp-btn" onclick="exportXlsx()">
+        <i class="ti ti-file-spreadsheet" aria-hidden="true" style="font-size:13px;vertical-align:-1px;margin-right:4px"></i>Export XLSX
+      </button>
+    </div>
+    <div class="tbl-wrap">
+      <div class="tbl-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Invoice No</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>GSTIN</th>
+              <th>Party</th>
+              <th class="r">Taxable Value<br><span style="font-size:9px;opacity:.65;font-weight:400">GSTR-1 / Tally</span></th>
+              <th class="r">CGST<br><span style="font-size:9px;opacity:.65;font-weight:400">GSTR-1 / Tally</span></th>
+              <th class="r">SGST<br><span style="font-size:9px;opacity:.65;font-weight:400">GSTR-1 / Tally</span></th>
+              <th class="r">IGST<br><span style="font-size:9px;opacity:.65;font-weight:400">GSTR-1 / Tally</span></th>
+              <th class="r">Total<br><span style="font-size:9px;opacity:.65;font-weight:400">GSTR-1 / Tally</span></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbl-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="legend">
+      <span>Top = GSTR-1 value &nbsp;·&nbsp; Bottom grey = Tally value</span>
+      <span>Red = difference &gt; ₹1</span>
+      <span>Missing in Tally = sale not booked in books · Missing in GSTR-1 = booked but not filed</span>
+      <i class="tb-i" data-help="Timing differences are common: an invoice issued on the last day of the month may land in the next period's GSTR-1, or a sale may be recorded in Tally but omitted from the return. Reconcile again after the next filing.">i</i>
+      <span>Click a <b>Value Mismatch</b> row to see breakdown</span>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script>
+const state = { g: null, t: null, results: null, filter: 'all', expanded: null };
+
+const SC = {
+  matched:    { label:'Matched',           bg:'#dcfce7', fg:'#166534', dot:'#22c55e', icon:'✓' },
+  mismatch:   { label:'Value Mismatch',    bg:'#fee2e2', fg:'#991b1b', dot:'#ef4444', icon:'⚠' },
+  only_gstr1: { label:'Missing in Tally',  bg:'#fef3c7', fg:'#92400e', dot:'#f59e0b', icon:'→' },
+  only_tally: { label:'Missing in GSTR-1', bg:'#dbeafe', fg:'#1e40af', dot:'#3b82f6', icon:'←' }
+};
+
+const AF = [
+  { key:'txval', label:'Taxable Value' },
+  { key:'cgst',  label:'CGST'         },
+  { key:'sgst',  label:'SGST'         },
+  { key:'igst',  label:'IGST'         },
+  { key:'total', label:'Total'        }
+];
+
+const norm  = s => String(s ?? '').trim().toUpperCase().replace(/\s+/g,'');
+const toNum = v => {
+  if (v == null || v === '') return 0;
+  if (typeof v === 'number') return Math.round(v * 100) / 100;
+  const n = parseFloat(String(v).replace(/[₹,\s]/g,''));
+  return isNaN(n) ? 0 : Math.round(n * 100) / 100;
+};
+const toDate = v => {
+  if (!v) return '';
+  if (typeof v === 'number') {
+    const d = new Date(Math.round((v - 25569) * 86400000));
+    return `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}`;
+  }
+  const s = String(v).trim();
+  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (m) return `${m[1].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[3].length===2?'20'+m[3]:m[3]}`;
+  return s;
+};
+const fmtN = n => n === 0 ? '—' : new Intl.NumberFormat('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+const fmtT = n => new Intl.NumberFormat('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+
+function fromJSON(data) {
+  const recs = [];
+  const push = (invNo,idt,gstin,party,txval,cgst,sgst,igst,val,type) => {
+    if (!invNo) return;
+    recs.push({ invoiceNo:norm(invNo),date:toDate(idt),gstin:String(gstin??''),partyName:String(party??''),txval,cgst,sgst,igst,total:toNum(val),type });
+  };
+  for (const p of data.b2b??[]) for (const inv of p.inv??[]) {
+    let txval=0,cgst=0,sgst=0,igst=0;
+    for (const {itm_det:d={}} of inv.itms??[]) { txval+=toNum(d.txval);cgst+=toNum(d.camt);sgst+=toNum(d.samt);igst+=toNum(d.iamt); }
+    push(inv.inum,inv.idt,p.ctin,p.trdnm,txval,cgst,sgst,igst,inv.val,'B2B');
+  }
+  for (const pos of data.b2cl??[]) for (const inv of pos.inv??[]) {
+    let txval=0,igst=0;
+    for (const {itm_det:d={}} of inv.itms??[]) { txval+=toNum(d.txval);igst+=toNum(d.iamt); }
+    push(inv.inum,inv.idt,'','',txval,0,0,igst,inv.val,'B2CL');
+  }
+  for (const p of data.cdnr??[]) for (const note of p.nt??[]) {
+    let txval=0,cgst=0,sgst=0,igst=0;
+    for (const {itm_det:d={}} of note.itms??[]) { txval+=toNum(d.txval);cgst+=toNum(d.camt);sgst+=toNum(d.samt);igst+=toNum(d.iamt); }
+    push(note.nt_num,note.nt_dt,p.ctin,'',txval,cgst,sgst,igst,note.val,note.ntty==='C'?'Credit Note':'Debit Note');
+  }
+  for (const note of data.cdnur??[]) {
+    let txval=0,igst=0;
+    for (const {itm_det:d={}} of note.itms??[]) { txval+=toNum(d.txval);igst+=toNum(d.iamt); }
+    push(note.nt_num,note.nt_dt,'','',txval,0,0,igst,note.val,'B2CL Note');
+  }
+  return recs;
+}
+
+const PATS = {
+  invoiceNo: ['voucher no','invoice no','vch no','inv no','bill no','invoice number','inum'],
+  date:      ['date'],
+  partyName: ['party','ledger name','party name','customer','buyer','receiver'],
+  gstin:     ['gstin','gst no','gst number','ctin'],
+  txval:     ['taxable value','taxable','assessable'],
+  cgst:      ['central tax','cgst'],
+  sgst:      ['state tax','sgst'],
+  igst:      ['integrated tax','igst'],
+  total:     ['invoice value','gross total','invoice amount']
+};
+
+function detectCols(headers) {
+  const lc = headers.map(h => String(h??'').toLowerCase().trim());
+  const r = {};
+  for (const [f,pats] of Object.entries(PATS))
+    for (const p of pats) { const i=lc.findIndex(h=>h.includes(p)); if(i>=0){r[f]=headers[i];break;} }
+  return r;
+}
+
+function fromTabular(rows) {
+  if (!rows?.length) return { records:[], cols:{} };
+  const headers = Object.keys(rows[0]);
+  const cols = detectCols(headers);
+  const records = rows.map(row => ({
+    invoiceNo: norm(row[cols.invoiceNo]??''),
+    date:      toDate(row[cols.date]??''),
+    partyName: String(row[cols.partyName]??''),
+    gstin:     String(row[cols.gstin]??''),
+    txval:     toNum(row[cols.txval]),
+    cgst:      toNum(row[cols.cgst]),
+    sgst:      toNum(row[cols.sgst]),
+    igst:      toNum(row[cols.igst]),
+    total:     toNum(row[cols.total]),
+    type:      'Sales'
+  })).filter(r=>r.invoiceNo);
+  return { records, cols };
+}
+
+async function parseFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'json') {
+    const text = await file.text();
+    const records = fromJSON(JSON.parse(text));
+    return { records, cols: null };
+  }
+  if (ext === 'csv') {
+    return new Promise((res,rej) =>
+      Papa.parse(file,{ header:true, skipEmptyLines:true,
+        complete: r => res(fromTabular(r.data)),
+        error: e => rej(new Error(e.message)) })
+    );
+  }
+  if (ext==='xlsx'||ext==='xls') {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf,{type:'array'});
+    return fromTabular(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''}));
+  }
+  throw new Error(`Unsupported format .${ext} — use JSON, XLSX, or CSV.`);
+}
+
+function reconcile(g1,tally) {
+  const gMap = new Map(g1.map(r=>[r.invoiceNo,r]));
+  const tMap = new Map(tally.map(r=>[r.invoiceNo,r]));
+  const res = [];
+  for (const g of g1) {
+    const t = tMap.get(g.invoiceNo);
+    if (!t) { res.push({key:g.invoiceNo,status:'only_gstr1',g1:g,tally:null,diffs:{}}); continue; }
+    const diffs={};
+    for (const f of AF) { const d=Math.abs((g[f.key]??0)-(t[f.key]??0)); if(d>1) diffs[f.key]={g:g[f.key]??0,t:t[f.key]??0,diff:d}; }
+    res.push({key:g.invoiceNo,status:Object.keys(diffs).length?'mismatch':'matched',g1:g,tally:t,diffs});
+  }
+  for (const t of tally) if(!gMap.has(t.invoiceNo)) res.push({key:t.invoiceNo,status:'only_tally',g1:null,tally:t,diffs:{}});
+  return res;
+}
+
+function dzOver(e,w) { e.preventDefault(); document.getElementById('dz-'+w).classList.add('drag'); }
+function dzLeave(w) { document.getElementById('dz-'+w).classList.remove('drag'); }
+function dzDrop(e,w) { e.preventDefault(); dzLeave(w); const f=e.dataTransfer.files?.[0]; if(f) handleFile(f,w); }
+
+async function handleFile(file,which) {
+  const dz = document.getElementById('dz-'+which);
+  const det = document.getElementById('det-'+which);
+  dz.className='dropzone';
+  dz.innerHTML='<i class="ti ti-refresh dz-icon" aria-hidden="true"></i><div class="dz-main">Parsing…</div>';
+  try {
+    const {records,cols} = await parseFile(file);
+    state[which] = records;
+    dz.classList.add('ok');
+    dz.innerHTML=`<i class="ti ti-circle-check dz-icon" style="color:#16a34a" aria-hidden="true"></i><div class="dz-ok">✓ ${file.name}</div><div class="dz-sub">${records.length} invoices loaded · click to replace</div>`;
+    if (cols && Object.keys(cols).length) {
+      det.style.display='block';
+      det.innerHTML='<b style="color:var(--color-text-primary)">Detected: </b>'+Object.entries(cols).filter(([,v])=>v).map(([k,v])=>`<span><b>${k}</b>→"${v}"</span>`).join('');
+    } else { det.style.display='none'; }
+    updateRunBtn();
+  } catch(err) {
+    state[which]=null;
+    dz.classList.add('err');
+    dz.innerHTML=`<i class="ti ti-alert-circle dz-icon" style="color:#dc2626" aria-hidden="true"></i><div class="dz-err">Error: ${err.message}</div><div class="dz-sub">Click to try again</div>`;
+    det.style.display='none';
+    updateRunBtn();
+  }
+}
+
+function updateRunBtn() {
+  const btn=document.getElementById('run-btn');
+  const hint=document.getElementById('run-hint');
+  if(state.g && state.t) {
+    btn.className='run-btn active';
+    hint.textContent='';
+  } else {
+    btn.className='run-btn inactive';
+    hint.textContent='Upload both files to enable reconciliation';
+  }
+}
+
+function doReconcile() {
+  if(!state.g||!state.t) return;
+  state.results=reconcile(state.g,state.t);
+  state.filter='all';
+  state.expanded=null;
+  document.getElementById('results').style.display='block';
+  renderSummary();
+  renderFilters();
+  renderTable();
+}
+
+function renderSummary() {
+  const total=state.results.length;
+  const counts={matched:0,mismatch:0,only_gstr1:0,only_tally:0};
+  for(const r of state.results) counts[r.status]++;
+  const cards=document.getElementById('summary-cards');
+  cards.innerHTML='';
+  for(const [key,cfg] of Object.entries(SC)) {
+    const n=counts[key]; const pct=total?Math.round(n/total*100):0;
+    const div=document.createElement('div');
+    div.className='scard'+(state.filter===key?' active':'');
+    div.style.setProperty('--dot-color',cfg.dot);
+    div.innerHTML=`<div class="scard-badge" style="background:${cfg.bg};color:${cfg.fg}">${cfg.icon} ${cfg.label}</div><div class="scard-num">${n}</div><div class="scard-pct">${pct}% of ${total} invoices</div>`;
+    div.onclick=()=>{state.filter=state.filter===key?'all':key;renderSummary();renderFilters();renderTable();};
+    cards.appendChild(div);
+  }
+}
+
+function renderFilters() {
+  const total=state.results.length;
+  const counts={matched:0,mismatch:0,only_gstr1:0,only_tally:0};
+  for(const r of state.results) counts[r.status]++;
+  const row=document.getElementById('filter-row');
+  row.innerHTML='';
+  const opts=[['all',`All (${total})`],...Object.entries(SC).map(([k,c])=>[k,`${c.label} (${counts[k]})`])];
+  for(const [val,label] of opts) {
+    const btn=document.createElement('button');
+    btn.className='fbtn'+(state.filter===val?' active':'');
+    btn.textContent=label;
+    btn.onclick=()=>{state.filter=val;renderSummary();renderFilters();renderTable();};
+    row.appendChild(btn);
+  }
+}
+
+function renderTable() {
+  const filtered=state.filter==='all'?state.results:state.results.filter(r=>r.status===state.filter);
+  const tbody=document.getElementById('tbl-body');
+  tbody.innerHTML='';
+
+  if(!filtered.length) {
+    tbody.innerHTML='<tr><td colspan="11" class="empty">No records match this filter.</td></tr>';
+    return;
+  }
+
+  const totG=Object.fromEntries(AF.map(f=>[f.key,0]));
+  const totT=Object.fromEntries(AF.map(f=>[f.key,0]));
+
+  filtered.forEach((row,i) => {
+    const cfg=SC[row.status];
+    const rec=row.g1??row.tally;
+    const isExp=state.expanded===row.key;
+    for(const f of AF){totG[f.key]+=row.g1?.[f.key]??0;totT[f.key]+=row.tally?.[f.key]??0;}
+
+    const tr=document.createElement('tr');
+    tr.className=(i%2===1?'even':'')+(row.status==='mismatch'?' mismatch-row':'');
+    if(row.status==='mismatch') tr.onclick=()=>{state.expanded=state.expanded===row.key?null:row.key;renderTable();};
+
+    const amtCells=AF.map(f=>{
+      const hasDiff=row.diffs[f.key];
+      const gv=row.g1?.[f.key]; const tv=row.tally?.[f.key];
+      return `<td class="r">${gv!==undefined?`<span class="${hasDiff?'diff-val':'g1-val'}">${fmtN(gv)}</span>`:'<span style="color:var(--color-text-secondary)">—</span>'}${tv!==undefined?`<div class="${hasDiff?'diff-t-val':'t-val'}">${fmtN(tv)}</div>`:''}</td>`;
+    }).join('');
+
+    tr.innerHTML=`
+      <td class="inv-no">${row.key}</td>
+      <td><span class="badge" style="background:${cfg.bg};color:${cfg.fg}">${cfg.icon} ${cfg.label}</span></td>
+      <td style="color:var(--color-text-secondary);white-space:nowrap">${rec?.date||'—'}</td>
+      <td style="font-family:monospace;font-size:10.5px;color:var(--color-text-secondary);white-space:nowrap">${rec?.gstin||'—'}</td>
+      <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--color-text-secondary)">${rec?.partyName||'—'}</td>
+      ${amtCells}
+      <td class="expand-icon">${row.status==='mismatch'?(isExp?'▲':'▼'):''}</td>`;
+    tbody.appendChild(tr);
+
+    if(isExp&&row.status==='mismatch') {
+      const diffFields=AF.filter(f=>row.diffs[f.key]);
+      const etr=document.createElement('tr');
+      etr.className='expand-detail';
+      etr.innerHTML=`<td colspan="11" style="padding:14px 18px">
+        <div style="font-size:11px;font-weight:600;color:#92400e;margin-bottom:10px">⚠ Breakdown — Invoice ${row.key}</div>
+        <table class="detail-table">
+          <thead><tr><th>Field</th><th style="text-align:right;padding:4px 18px">GSTR-1</th><th style="text-align:right;padding:4px 18px">Tally</th><th style="text-align:right;padding-left:18px;color:#dc2626">Difference</th></tr></thead>
+          <tbody>${diffFields.map(f=>`<tr>
+            <td style="font-weight:500;padding-right:18px">${f.label}</td>
+            <td style="text-align:right;padding:5px 18px;font-family:monospace">₹ ${fmtT(row.diffs[f.key].g)}</td>
+            <td style="text-align:right;padding:5px 18px;font-family:monospace">₹ ${fmtT(row.diffs[f.key].t)}</td>
+            <td class="dr">₹ ${fmtT(row.diffs[f.key].diff)}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </td>`;
+      tbody.appendChild(etr);
+    }
+  });
+
+  const ttr=document.createElement('tr');
+  ttr.className='totals-row';
+  ttr.innerHTML=`<td colspan="5" style="padding:10px 11px 10px 13px;font-size:11px;color:var(--color-text-secondary)">Totals · ${filtered.length} records</td>
+    ${AF.map(f=>`<td class="r"><span>${fmtT(totG[f.key])}</span><div class="t-val">${fmtT(totT[f.key])}</div></td>`).join('')}<td></td>`;
+  tbody.appendChild(ttr);
+}
+
+function exportXlsx() {
+  if(!state.results) return;
+  const rows=state.results.map(r=>({
+    'Invoice No':r.key,'Status':SC[r.status].label,
+    'Date (GSTR-1)':r.g1?.date??'','Date (Tally)':r.tally?.date??'',
+    'GSTIN':r.g1?.gstin??r.tally?.gstin??'','Party':r.g1?.partyName??r.tally?.partyName??'',
+    'Taxable (GSTR-1)':r.g1?.txval??'','Taxable (Tally)':r.tally?.txval??'',
+    'CGST (GSTR-1)':r.g1?.cgst??'','CGST (Tally)':r.tally?.cgst??'',
+    'SGST (GSTR-1)':r.g1?.sgst??'','SGST (Tally)':r.tally?.sgst??'',
+    'IGST (GSTR-1)':r.g1?.igst??'','IGST (Tally)':r.tally?.igst??'',
+    'Total (GSTR-1)':r.g1?.total??'','Total (Tally)':r.tally?.total??''
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Reconciliation');
+  XLSX.writeFile(wb,'GSTR1_Tally_Reconciliation.xlsx');
+}
+
+function dlTemplate(which) {
+  const headers = which==='g'
+    ? ['Invoice No','Date','GSTIN/UIN','Party Name','Taxable Value','CGST','SGST','IGST','Invoice Value']
+    : ['Voucher No.','Date',"Party's Name",'GSTIN/UIN of Party','Taxable Value','Central Tax','State Tax','Integrated Tax','Invoice Value'];
+  const csv=headers.join(',')+'\n';
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:`${which==='g'?'gstr1':'tally'}_template.csv`});
+  a.click();
+}
+
+const DG=[
+  {invoiceNo:'INV-2024-001',date:'01/04/2024',gstin:'27AABCU9603R1ZX',partyName:'XYZ Traders Pvt Ltd',  txval:50000, cgst:4500,sgst:4500,igst:0,   total:59000, type:'B2B'},
+  {invoiceNo:'INV-2024-002',date:'05/04/2024',gstin:'',               partyName:'Retail Customer',        txval:25000, cgst:0,   sgst:0,   igst:3000, total:28000, type:'B2CL'},
+  {invoiceNo:'INV-2024-003',date:'10/04/2024',gstin:'29GGGGG1314R9Z6',partyName:'ABC Enterprises Ltd',   txval:100000,cgst:9000,sgst:9000,igst:0,   total:118000,type:'B2B'},
+  {invoiceNo:'INV-2024-004',date:'15/04/2024',gstin:'24AABCU9603R1ZX',partyName:'PQR Private Limited',   txval:75000, cgst:6750,sgst:6750,igst:0,   total:88500, type:'B2B'},
+  {invoiceNo:'INV-2024-005',date:'20/04/2024',gstin:'',               partyName:'Retail Customer 2',      txval:30000, cgst:0,   sgst:0,   igst:5400, total:35400, type:'B2CL'},
+];
+const DT=[
+  {invoiceNo:'INV-2024-001',date:'01/04/2024',gstin:'27AABCU9603R1ZX',partyName:'XYZ Traders Pvt Ltd',  txval:50000, cgst:4500,sgst:4500,igst:0,   total:59000, type:'Sales'},
+  {invoiceNo:'INV-2024-002',date:'05/04/2024',gstin:'',               partyName:'Retail Customer',        txval:25000, cgst:0,   sgst:0,   igst:3000, total:28000, type:'Sales'},
+  {invoiceNo:'INV-2024-003',date:'10/04/2024',gstin:'29GGGGG1314R9Z6',partyName:'ABC Enterprises Ltd',   txval:100500,cgst:9045,sgst:9045,igst:0,   total:118590,type:'Sales'},
+  {invoiceNo:'INV-2024-006',date:'22/04/2024',gstin:'36AABCU9603R1ZX',partyName:'LMN Corporation',       txval:45000, cgst:4050,sgst:4050,igst:0,   total:53100, type:'Sales'},
+];
+
+function loadDemo() {
+  state.g=DG; state.t=DT; state.results=null; state.filter='all'; state.expanded=null;
+  ['g','t'].forEach(w=>{
+    const dz=document.getElementById('dz-'+w);
+    dz.className='dropzone ok';
+    const name=w==='g'?'sample_gstr1.json':'sample_tally.csv';
+    const cnt=w==='g'?DG.length:DT.length;
+    dz.innerHTML=`<i class="ti ti-circle-check dz-icon" style="color:#16a34a" aria-hidden="true"></i><div class="dz-ok">✓ ${name}</div><div class="dz-sub">${cnt} invoices loaded · click to replace</div>`;
+    document.getElementById('det-'+w).style.display='none';
+  });
+  document.getElementById('results').style.display='none';
+  updateRunBtn();
+}
+</script>
+</body>
+</html>

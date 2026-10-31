@@ -65,6 +65,84 @@
       "linkLabel": "Open Tool",
       "description": "Firm-level UDIN master register with partner-wise views, automated exception checks (format, membership match, late generation, maker-checker) and monthly portal reconciliation. Data stays in your browser.",
       "addedAt": "2026-11-01T00:00:00Z"
+    },
+    {
+      "id": "tool-litigation",
+      "name": "Litigation Tracker",
+      "creator": "Heuristic Techsol LLP",
+      "creatorUrl": "https://nfratools.in",
+      "downloadUrl": "https://catoolbox.in/litigation/",
+      "category": "Litigation",
+      "icon": "⚖️",
+      "color": "cyan",
+      "linkLabel": "Open Tool",
+      "description": "Track Income Tax and GST cases across all forums — notices, replies, hearings and deadlines on one dashboard with overdue alerts. Data stays in your browser.",
+      "addedAt": "2026-11-01T00:00:00Z"
+    },
+    {
+      "id": "tool-payroll",
+      "name": "Payroll Tool",
+      "creator": "Heuristic Techsol LLP",
+      "creatorUrl": "https://nfratools.in",
+      "downloadUrl": "https://catoolbox.in/payroll/",
+      "category": "Payroll",
+      "icon": "💰",
+      "color": "indigo",
+      "linkLabel": "Open Tool",
+      "description": "Run monthly or annual payroll with automatic PF, ESIC and Professional Tax, generate printable payslips and manage multiple organizations. PIN-protected and fully offline.",
+      "addedAt": "2026-11-01T00:00:00Z"
+    },
+    {
+      "id": "tool-bank-recon",
+      "name": "Bank Reconciliation",
+      "creator": "Heuristic Techsol LLP",
+      "creatorUrl": "https://nfratools.in",
+      "downloadUrl": "https://catoolbox.in/bank-recon/",
+      "category": "Banking",
+      "icon": "🏦",
+      "color": "teal",
+      "linkLabel": "Open Tool",
+      "description": "Automatically match bank statements against your ledger with confidence-scored matching, visual analytics and one-click Excel/CSV export.",
+      "addedAt": "2026-11-01T00:00:00Z"
+    },
+    {
+      "id": "tool-fixed-assets",
+      "name": "Fixed Asset Manager",
+      "creator": "Heuristic Techsol LLP",
+      "creatorUrl": "https://nfratools.in",
+      "downloadUrl": "https://catoolbox.in/fixed-assets/",
+      "category": "Assets",
+      "icon": "🏗️",
+      "color": "fuchsia",
+      "linkLabel": "Open Tool",
+      "description": "Maintain a fixed asset register with Companies Act and Income Tax depreciation, Form 3CD Clause 18 blocks, Schedule III notes and DTA/DTL workings.",
+      "addedAt": "2026-11-01T00:00:00Z"
+    },
+    {
+      "id": "tool-gstr1-recon",
+      "name": "GSTR-1 ↔ Tally Recon",
+      "creator": "Heuristic Techsol LLP",
+      "creatorUrl": "https://nfratools.in",
+      "downloadUrl": "https://catoolbox.in/gstr1-recon/",
+      "category": "GST",
+      "icon": "🔄",
+      "color": "sky",
+      "linkLabel": "Open Tool",
+      "description": "Reconcile your GSTR-1 (JSON, Excel or CSV) against your Tally sales register invoice-by-invoice and spot value mismatches instantly.",
+      "addedAt": "2026-11-01T00:00:00Z"
+    },
+    {
+      "id": "tool-tds-extractor",
+      "name": "TDS Extractor",
+      "creator": "Heuristic Techsol LLP",
+      "creatorUrl": "https://nfratools.in",
+      "downloadUrl": "https://catoolbox.in/tds-extractor/",
+      "category": "TDS",
+      "icon": "🗂️",
+      "color": "orange",
+      "linkLabel": "Open Tool",
+      "description": "Extract every transaction, challan and deductee detail from Form 26Q / 24Q FVU (.txt) and TRACES (.pdf) files into a clean, filterable Excel workbook.",
+      "addedAt": "2026-11-01T00:00:00Z"
     }
   ]
 }
