@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UDIN Register</title>
+<meta name="description" content="Firm-level UDIN master register with partner-wise views, automated exception checks and monthly portal reconciliation. Runs entirely in your browser — data never leaves your device.">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f0;--panel:#fff;--ink:#17262b;--mute:#5c6b70;--line:#d3dbd9;--acc:#0f5c5c;--acc2:#e6f0ef;--bad:#a4302a;--badbg:#f8e6e4;--warn:#8a5a00;--warnbg:#fbf0d9;--ok:#2b6a3b;--okbg:#e2f0e5;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101a1c;--panel:#182427;--ink:#e3ecea;--mute:#93a5a8;--line:#2c3d41;--acc:#5cc0b8;--acc2:#1d3335;--bad:#f09b93;--badbg:#3b2523;--warn:#f0c26a;--warnbg:#3a2f18;--ok:#8fd19f;--okbg:#1f3526}}
+:root[data-theme="dark"]{--bg:#101a1c;--panel:#182427;--ink:#e3ecea;--mute:#93a5a8;--line:#2c3d41;--acc:#5cc0b8;--acc2:#1d3335;--bad:#f09b93;--badbg:#3b2523;--warn:#f0c26a;--warnbg:#3a2f18;--ok:#8fd19f;--okbg:#1f3526}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Public Sans",system-ui,sans-serif}
+header{padding:20px clamp(14px,3vw,32px) 0}
+h1{font:600 26px "Source Serif 4",Georgia,serif;margin:0}
+header p{margin:2px 0 14px;color:var(--mute)}
+nav{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);padding:0 clamp(14px,3vw,32px)}
+nav button{background:none;border:0;padding:10px 14px;font:inherit;color:var(--mute);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+nav button[aria-selected=true]{color:var(--acc);border-color:var(--acc);font-weight:600}
+main{padding:18px clamp(14px,3vw,32px) 40px;max-width:1400px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:16px}
+h2{font:600 17px "Source Serif 4",Georgia,serif;margin:0 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mute)}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:7px 8px;width:100%}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.btn{font:inherit;font-weight:600;background:var(--acc);color:var(--panel);border:0;border-radius:4px;padding:8px 14px;cursor:pointer}
+.btn.alt{background:var(--acc2);color:var(--acc)}.btn.sm{padding:3px 8px;font-size:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-top:12px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:900px}
+th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--mute);font-size:12px;background:var(--bg);position:sticky;top:0}
+tr.cx td{color:var(--mute);text-decoration:line-through}tr.cx td:last-child{text-decoration:none}
+.udin{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.tag{display:inline-block;border-radius:3px;padding:1px 6px;font-size:11px;font-weight:600;margin:1px 2px 1px 0}
+.t-bad{background:var(--badbg);color:var(--bad)}.t-warn{background:var(--warnbg);color:var(--warn)}.t-ok{background:var(--okbg);color:var(--ok)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px}
+.kpi b{font:600 26px "Source Serif 4",Georgia,serif;display:block}.kpi span{color:var(--mute);font-size:12px}
+.kpi.bad b{color:var(--bad)}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;min-width:100px}.bar i{display:block;height:100%;background:var(--acc)}.bar i.hi{background:var(--bad)}
+.note{color:var(--mute);font-size:12px;margin:8px 0 0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header>
+<a href="/" title="Back to CA Toolbox" style="display:inline-block;margin-bottom:8px;color:var(--acc);text-decoration:none;font-size:12px;font-weight:600">← CA Toolbox</a>
+<h1>UDIN register</h1>
+<p>Firm-level master record with partner-wise views, exception checks and monthly reconciliation.</p>
+</header>
+<nav role="tablist" id="tabs"></nav>
+<main id="main"></main>
+<script>
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const DOCS=["Tax audit (3CB-3CD)","Company audit report","Other statutory audit","GST audit / reconciliation","Transfer pricing (3CEB)","Foreign remittance (15CB)","Net worth certificate","Turnover certificate","Other certificate"];
+const today=()=>new Date().toISOString().slice(0,10);
+const fyOf=d=>{const t=new Date(d);const y=t.getFullYear();return t.getMonth()>=3?`${y}-${String(y+1).slice(2)}`:`${y-1}-${String(y).slice(2)}`};
+const days=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
+let S=load();
+function seed(){return{tab:"Register",fy:"All",pf:"All",q:"",settings:{window:0,taxLimit:60,coLimit:20},
+partners:[{id:1,name:"A. Sharma",mno:"123456"},{id:2,name:"R. Iyer",mno:"234567"},{id:3,name:"K. Mehta",mno:"345678"}],
+entries:[
+{id:1,udin:"123456AAAAAA111111",client:"Alpha Traders Pvt Ltd",pan:"AAAPA1111A",eng:"ENG-001",doc:DOCS[0],signed:"2026-09-28",gen:"2026-09-28",pid:1,pdf:"signed/alpha-3cd.pdf",wp:"WP/2526/001",eqr:"R. Iyer",chk:"Article 1",status:"Active",reason:""},
+{id:2,udin:"234567BBBBBB222222",client:"Beta Industries Ltd",pan:"AAAPB2222B",eng:"ENG-014",doc:DOCS[1],signed:"2026-09-20",gen:"2026-09-27",pid:2,pdf:"",wp:"WP/2526/014",eqr:"",chk:"",status:"Active",reason:""},
+{id:3,udin:"345678CCCCCC33",client:"Gamma LLP",pan:"AAAPC3333C",eng:"",doc:DOCS[6],signed:"2026-08-10",gen:"2026-08-10",pid:3,pdf:"signed/gamma-nw.pdf",wp:"",eqr:"",chk:"Article 2",status:"Cancelled",reason:""}],
+recs:[],seedData:true}}
+function load(){try{const v=JSON.parse(localStorage.getItem("udinreg1"));if(v)return v}catch(e){}return seed()}
+function save(){try{localStorage.setItem("udinreg1",JSON.stringify(S))}catch(e){}}
+const P=id=>S.partners.find(p=>p.id==id)||{name:"?",mno:""};
+function issues(e,all){
+ const r=[],w=S.settings.window;
+ if(e.status==="Cancelled"){if(!e.reason)r.push("Cancelled without reason");return r}
+ if(!/^[A-Za-z0-9]{18}$/.test(e.udin))r.push("UDIN not 18 characters");
+ else if(e.udin.slice(0,6)!==P(e.pid).mno)r.push("UDIN does not match partner membership no.");
+ if(all.filter(x=>x.udin===e.udin&&x.id!==e.id).length)r.push("Duplicate UDIN");
+ const g=days(e.signed,e.gen);if(g>w)r.push(`Generated ${g} days after signing`);
+ if(g<0)r.push("Generated before signing date");
+ if(!e.pdf)r.push("No signed PDF link");
+ if(!e.wp)r.push("No working paper ref");
+ if(!e.eng)r.push("No engagement ID");
+ if(!e.chk)r.push("Not checked (maker-checker)");
+ return r}
+function tabs(){const T=["Register","Dashboard","Partners","Reconciliation","Settings"];
+ $("#tabs").innerHTML=T.map(t=>`<button role="tab" aria-selected="${S.tab===t}" data-t="${t}">${t}</button>`).join("");
+ $("#tabs").onclick=e=>{const t=e.target.dataset.t;if(t){S.tab=t;save();render()}}}
+function filtered(){return S.entries.filter(e=>(S.fy==="All"||fyOf(e.signed)===S.fy)&&(S.pf==="All"||e.pid==S.pf)&&(!S.q||(e.udin+e.client+e.eng+e.doc).toLowerCase().includes(S.q.toLowerCase())))}
+function opts(list,sel){return list.map(x=>`<option ${x==sel?"selected":""}>${esc(x)}</option>`).join("")}
+function regView(){
+ const fys=[...new Set(S.entries.map(e=>fyOf(e.signed)))].sort();
+ const rows=filtered().sort((a,b)=>b.id-a.id);
+ return `<div class="card"><h2>New entry</h2>
+ <form id="f" onsubmit="return false"><div class="grid">
+ <label>Signing partner<select name="pid">${S.partners.map(p=>`<option value="${p.id}">${esc(p.name)} (${p.mno})</option>`).join("")}</select></label>
+ <label>UDIN (18 characters)<input name="udin" maxlength="18" required></label>
+ <label>Client name<input name="client" required></label>
+ <label>Client PAN<input name="pan" maxlength="10"></label>
+ <label>Engagement ID<input name="eng"></label>
+ <label>Document type<select name="doc">${opts(DOCS)}</select></label>
+ <label>Date signed<input type="date" name="signed" value="${today()}" required></label>
+ <label>UDIN generated on<input type="date" name="gen" value="${today()}" required></label>
+ <label>Signed PDF link or path<input name="pdf"></label>
+ <label>Working paper ref<input name="wp"></label>
+ <label>Engagement quality reviewer<input name="eqr"></label>
+ <label>Checked by (maker-checker)<input name="chk"></label>
+ </div><div class="row"><button class="btn" id="add">Add to register</button><span id="msg" class="note"></span></div></form></div>
+ <div class="card"><h2>Register</h2>
+ <div class="grid" style="margin-bottom:12px">
+ <label>Financial year<select id="ffy"><option>All</option>${opts(fys,S.fy)}</select></label>
+ <label>Partner<select id="fp"><option value="All">All</option>${S.partners.map(p=>`<option value="${p.id}" ${S.pf==p.id?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label>
+ <label>Search<input id="fq" value="${esc(S.q)}" placeholder="UDIN, client, engagement"></label></div>
+ <div class="tw"><table><thead><tr><th>UDIN</th><th>Client</th><th>Document</th><th>Partner</th><th>Signed</th><th>Gap</th><th>Checks</th><th></th></tr></thead><tbody>
+ ${rows.map(e=>{const is=issues(e,S.entries);return `<tr class="${e.status==="Cancelled"?"cx":""}"><td class="udin">${esc(e.udin)}</td><td>${esc(e.client)}<br><small>${esc(e.eng)}</small></td><td>${esc(e.doc)}</td><td>${esc(P(e.pid).name)}</td><td>${e.signed}</td><td>${days(e.signed,e.gen)}d</td>
+ <td>${e.status==="Cancelled"?`<span class="tag t-warn">Cancelled${e.reason?": "+esc(e.reason):""}</span>`:""}${is.length?is.map(i=>`<span class="tag t-bad">${esc(i)}</span>`).join(""):'<span class="tag t-ok">Clean</span>'}</td>
+ <td>${e.status==="Active"?`<button class="btn alt sm" data-cx="${e.id}">Cancel</button>`:""}</td></tr>`}).join("")||`<tr><td colspan="8">No entries yet. Add the first one above.</td></tr>`}
+ </tbody></table></div>
+ <div class="row"><button class="btn alt" id="csv">Export CSV</button>${S.seedData?'<button class="btn alt" id="clr">Clear sample data</button>':""}</div>
+ <p class="note">Entries are never deleted. Use Cancel with a reason so the record trail stays intact. Data is kept in this browser only, so export regularly.</p></div>`}
+function regBind(){
+ $("#add").onclick=()=>{const f=$("#f");if(!f.reportValidity())return;const d=Object.fromEntries(new FormData(f));
+  d.id=Date.now();d.pid=+d.pid;d.status="Active";d.reason="";d.udin=d.udin.toUpperCase();
+  if(S.seedData){}S.entries.push(d);save();render()};
+ $("#ffy").onchange=e=>{S.fy=e.target.value;render()};$("#fp").onchange=e=>{S.pf=e.target.value;render()};
+ $("#fq").oninput=e=>{S.q=e.target.value;const p=e.target.selectionStart;render();const i=$("#fq");i.focus();i.setSelectionRange(p,p)};
+ document.querySelectorAll("[data-cx]").forEach(b=>b.onclick=()=>{const r=prompt("Reason for cancellation (required):");if(!r)return;const e=S.entries.find(x=>x.id==b.dataset.cx);e.status="Cancelled";e.reason=r;save();render()});
+ $("#csv").onclick=()=>{const h=["UDIN","Client","PAN","Engagement","Document","Partner","Membership","Signed","Generated","Gap days","PDF","WP ref","EQR","Checked by","Status","Reason","Issues"];
+  const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const L=[h.map(q).join(",")].concat(S.entries.map(e=>[e.udin,e.client,e.pan,e.eng,e.doc,P(e.pid).name,P(e.pid).mno,e.signed,e.gen,days(e.signed,e.gen),e.pdf,e.wp,e.eqr,e.chk,e.status,e.reason,issues(e,S.entries).join("; ")].map(q).join(",")));
+  const a=document.createElement("a");a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(L.join("\n"));a.download="udin-register.csv";a.click()};
+ const c=$("#clr");if(c)c.onclick=()=>{if(confirm("Remove the three sample entries and sample partners?")){S.entries=[];S.partners=[];S.seedData=false;save();render()}}}
+function dashView(){
+ const act=S.entries.filter(e=>e.status==="Active"),cx=S.entries.filter(e=>e.status==="Cancelled");
+ const ex=S.entries.map(e=>({e,i:issues(e,S.entries)})).filter(x=>x.i.length);
+ const cnt=k=>ex.filter(x=>x.i.some(i=>i.startsWith(k))).length;
+ const k=(n,l,b)=>`<div class="kpi ${b&&n?"bad":""}"><b>${n}</b><span>${l}</span></div>`;
+ const lim=S.partners.map(p=>{const mine=act.filter(e=>e.pid==p.id);const t=mine.filter(e=>e.doc===DOCS[0]).length,c=mine.filter(e=>e.doc===DOCS[1]).length;
+  const bar=(n,m)=>`<div class="bar"><i class="${n>=m*.9?"hi":""}" style="width:${Math.min(100,n/m*100)}%"></i></div>${n} of ${m}`;
+  return `<tr><td>${esc(p.name)}</td><td>${mine.length}</td><td>${bar(t,S.settings.taxLimit)}</td><td>${bar(c,S.settings.coLimit)}</td></tr>`}).join("");
+ return `<div class="kpis">${k(act.length,"Active UDINs")}${k(cx.length,"Cancelled")}${k(ex.length,"Entries with exceptions",1)}${k(cnt("Generated"),"Late generation",1)}${k(cnt("No signed"),"Missing signed PDF",1)}${k(cnt("No working"),"Missing working paper ref",1)}${k(cnt("Not checked"),"Unchecked entries",1)}</div>
+ <div class="card"><h2>Exception list</h2><div class="tw"><table><thead><tr><th>UDIN</th><th>Client</th><th>Partner</th><th>Exceptions</th></tr></thead><tbody>
+ ${ex.map(x=>`<tr><td class="udin">${esc(x.e.udin)}</td><td>${esc(x.e.client)}</td><td>${esc(P(x.e.pid).name)}</td><td>${x.i.map(i=>`<span class="tag t-bad">${esc(i)}</span>`).join("")}</td></tr>`).join("")||'<tr><td colspan="4">No exceptions. Every entry passes the automated checks.</td></tr>'}</tbody></table></div></div>
+ <div class="card"><h2>Partner statutory limits</h2><div class="tw"><table><thead><tr><th>Partner</th><th>Total UDINs</th><th>Tax audits</th><th>Company audits</th></tr></thead><tbody>${lim||'<tr><td colspan="4">Add partners first.</td></tr>'}</tbody></table></div>
+ <p class="note">Counts include all financial years in the register. Filter and check by year before relying on the limit view.</p></div>`}
+function partView(){return `<div class="card"><h2>Partners</h2><div class="tw"><table style="min-width:400px"><thead><tr><th>Name</th><th>Membership no.</th></tr></thead><tbody>${S.partners.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.mno)}</td></tr>`).join("")||'<tr><td colspan="2">No partners yet.</td></tr>'}</tbody></table></div>
+ <div class="row"><label>Name<input id="pn"></label><label>Membership no. (6 digits)<input id="pm" maxlength="6"></label><button class="btn" id="pa">Add partner</button></div>
+ <p class="note">The first six characters of every UDIN must equal the signing partner's membership number. The register checks this automatically.</p></div>`}
+function partBind(){$("#pa").onclick=()=>{const n=$("#pn").value.trim(),m=$("#pm").value.trim();if(!n||!/^\d{6}$/.test(m)){alert("Enter a name and a 6-digit membership number.");return}S.partners.push({id:Date.now(),name:n,mno:m});save();render()}}
+function recView(){
+ const cur=today().slice(0,7);
+ return `<div class="card"><h2>Monthly reconciliation</h2>
+ <div class="grid"><label>Month<input type="month" id="rm" value="${cur}"></label><label>UDINs on the portal (my-UDIN list)<input type="number" id="rp" min="0"></label><label>Done by<input id="rb"></label><label>Differences and how resolved<input id="rn"></label></div>
+ <div class="row"><button class="btn" id="ra">Save sign-off</button></div>
+ <p class="note">Register count is taken from UDIN generation dates in the month, active and cancelled entries together, since both appear on the portal.</p></div>
+ <div class="card"><h2>Sign-offs</h2><div class="tw"><table style="min-width:600px"><thead><tr><th>Month</th><th>Portal</th><th>Register</th><th>Result</th><th>Done by</th><th>Notes</th></tr></thead><tbody>
+ ${[...S.recs].reverse().map(r=>`<tr><td>${r.m}</td><td>${r.p}</td><td>${r.r}</td><td>${r.p==r.r?'<span class="tag t-ok">Matches</span>':'<span class="tag t-bad">Difference of '+Math.abs(r.p-r.r)+"</span>"}</td><td>${esc(r.by)}</td><td>${esc(r.n)}</td></tr>`).join("")||'<tr><td colspan="6">No sign-offs recorded yet.</td></tr>'}</tbody></table></div></div>`}
+function recBind(){$("#ra").onclick=()=>{const m=$("#rm").value,p=$("#rp").value,by=$("#rb").value.trim();if(!m||p===""||!by){alert("Enter month, portal count and who did the reconciliation.");return}
+ const r=S.entries.filter(e=>e.gen.slice(0,7)===m).length;S.recs.push({m,p:+p,r,by,n:$("#rn").value});save();render()}}
+function setView(){const s=S.settings;return `<div class="card"><h2>Settings</h2><div class="grid">
+ <label>Allowed days between signing and UDIN generation<input type="number" min="0" id="sw" value="${s.window}"></label>
+ <label>Tax audit limit per partner<input type="number" min="1" id="st" value="${s.taxLimit}"></label>
+ <label>Company audit limit per partner<input type="number" min="1" id="sc" value="${s.coLimit}"></label></div>
+ <div class="row"><button class="btn" id="ss">Save settings</button></div>
+ <p class="note">Confirm the current UDIN timeline and statutory limits against the latest ICAI guidance before relying on these values. Peer review checklists change from time to time.</p></div>`}
+function setBind(){$("#ss").onclick=()=>{S.settings={window:+$("#sw").value,taxLimit:+$("#st").value,coLimit:+$("#sc").value};save();render()}}
+function render(){tabs();const t=S.tab,m=$("#main");
+ m.innerHTML={Register:regView,Dashboard:dashView,Partners:partView,Reconciliation:recView,Settings:setView}[t]();
+ ({Register:regBind,Partners:partBind,Reconciliation:recBind,Settings:setBind}[t]||(()=>{}))()}
+render();
+</script>
+</body>
+</html>

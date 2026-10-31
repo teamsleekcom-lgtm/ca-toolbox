@@ -52,6 +52,19 @@
       "linkLabel": "Open Tool",
       "description": "Upload an ITR JSON (ITR-1 to ITR-6) and get a ready-to-print Computation of Income with all schedules, P&L, Balance Sheet and taxes paid — generated entirely in your browser.",
       "addedAt": "2026-11-01T00:00:00Z"
+    },
+    {
+      "id": "tool-udin-register",
+      "name": "UDIN Register",
+      "creator": "Heuristic Techsol LLP",
+      "creatorUrl": "https://nfratools.in",
+      "downloadUrl": "https://catoolbox.in/udin/",
+      "category": "Compliance",
+      "icon": "📋",
+      "color": "rose",
+      "linkLabel": "Open Tool",
+      "description": "Firm-level UDIN master register with partner-wise views, automated exception checks (format, membership match, late generation, maker-checker) and monthly portal reconciliation. Data stays in your browser.",
+      "addedAt": "2026-11-01T00:00:00Z"
     }
   ]
 }
