@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Computation of Income Generator</title>
+    <meta name="description" content="Upload an ITR JSON (ITR-1 to ITR-6) and generate a ready-to-print Computation of Income with schedules, P&L, Balance Sheet and taxes paid. Runs entirely in your browser.">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <style>
+        :root {
+            --text-color: #000;
+            --light-grey: #f7f7f7;
+            --border-color: #ddd;
+        }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10pt;
+            color: var(--text-color);
+            margin: 20px auto;
+            max-width: 800px;
+        }
+        
+        /* Web Controls (Hidden on Print/PDF) */
+        .controls {
+            background-color: #f4f4f4;
+            padding: 15px;
+            margin-bottom: 30px;
+            border: 1px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .file-upload-wrapper { display: flex; align-items: center; gap: 10px; }
+        button, input[type="file"], select { padding: 6px 10px; font-size: 10pt; cursor: pointer; }
+        
+        .btn-pdf {
+            background-color: #1a2744;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            padding: 8px 15px;
+        }
+        .btn-pdf:hover {
+            background-color: #0f172a;
+        }
+
+        /* Global Typography & Alignment */
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .text-left { text-align: left; }
+        .bold { font-weight: bold; }
+        .uppercase { text-transform: uppercase; }
+        .indent { padding-left: 20px !important; }
+        .bullet { display: inline-block; width: 15px; font-size: 9pt; }
+        .group-header { font-style: italic; color: #333; background-color: #fafafa;}
+
+        /* Header Section */
+        .header-top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; font-weight: bold;}
+        
+        .assessee-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .assessee-table td { padding: 3px 0; vertical-align: top; }
+        .assessee-table .lbl { width: 22%; }
+        .assessee-table .colon { width: 3%; }
+        .assessee-table .val { width: 75%; font-weight: bold; }
+        
+        .split-details { width: 100%; display: flex; justify-content: space-between; margin-bottom: 20px;}
+        .split-col { width: 48%; }
+        .split-col table { width: 100%; border-collapse: collapse; }
+        .split-col td { padding: 3px 0; vertical-align: top; }
+        .split-col .lbl { width: 40%; }
+        .split-col .colon { width: 5%; }
+        .split-col .val { font-weight: bold; }
+        
+        /* Minimalist Table Design with Light Grey Elements */
+        table.comp-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 25px; 
+            border: 1px solid var(--border-color);
+        }
+        .comp-table th { 
+            background-color: var(--light-grey);
+            border-top: 1px solid #000; 
+            border-bottom: 1px solid #000; 
+            padding: 8px 5px; 
+            text-align: left; 
+            font-weight: bold; 
+        }
+        .comp-table td { padding: 5px 5px; vertical-align: top; border-bottom: 1px solid var(--border-color); }
+        .comp-table th.num, .comp-table td.num { text-align: right; padding-right: 15px; }
+        
+        /* Line Styles for Totals */
+        .line-top td { border-top: 1px solid #000; }
+        .line-bottom td { border-bottom: 1px solid #000; }
+        .line-double-bottom td { border-bottom: 3px double #000; }
+        
+        /* T-Format Accounting Table Styles (For B/S and P&L) */
+        .t-format { 
+            display: flex; 
+            width: 100%; 
+            border: 1px solid #000; 
+            margin-bottom: 25px; 
+            page-break-inside: avoid; 
+        }
+        .t-side { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+        }
+        .t-side:first-child { 
+            border-right: 1px solid #000; 
+        }
+        .t-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+        }
+        .t-table th { 
+            background-color: var(--light-grey);
+            border-bottom: 1px solid #000; 
+            padding: 8px 5px; 
+            text-align: left; 
+            font-weight: bold; 
+        }
+        .t-table td { 
+            padding: 5px 5px; 
+            vertical-align: top; 
+            border-bottom: 1px solid var(--border-color);
+        }
+        .t-table th.num, .t-table td.num { 
+            text-align: right; 
+            padding-right: 15px;
+        }
+        .t-footer { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-top: auto; 
+            background-color: var(--light-grey);
+            border-top: 1px solid #000; 
+            border-bottom: 3px double #000; 
+            padding: 8px 15px 8px 5px;
+            font-weight: bold; 
+        }
+
+        /* Schedule Headings */
+        .sch-title { font-weight: bold; font-size: 11pt; margin-bottom: 5px; margin-top: 30px; }
+        .sch-subtitle { font-size: 9pt; margin-bottom: 10px; color: #555; }
+
+        .schedule { page-break-inside: avoid; }
+        
+        /* Hiding Logic Classes */
+        .itr-hide { display: none !important; }
+        .zero-hide { display: none !important; }
+
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 12mm;
+            }
+            .controls { display: none !important; }
+            body { margin: 0; max-width: 100%; }
+            .schedule { page-break-inside: avoid; margin-bottom: 20px; }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+        #pdf-content { padding: 0 15px; }
+    </style>
+</head>
+<body>
+
+    <!-- CONTROLS -->
+    <div class="controls" id="web-controls">
+        <div class="file-upload-wrapper">
+            <button onclick="location.href='/'" title="Back to CA Toolbox">← CA Toolbox</button>
+            <label for="jsonFileInput" class="bold">Import Client JSON:</label>
+            <input type="file" id="jsonFileInput" accept=".json" onchange="handleFileUpload(event)">
+        </div>
+        
+        <div class="file-upload-wrapper">
+            <label for="itrSelector" class="bold">Form Type:</label>
+            <select id="itrSelector" onchange="updateComputationFormat()">
+                <option value="ITR-1">ITR-1</option>
+                <option value="ITR-2">ITR-2</option>
+                <option value="ITR-3">ITR-3</option>
+                <option value="ITR-4">ITR-4</option>
+                <option value="ITR-5">ITR-5</option>
+                <option value="ITR-6">ITR-6</option>
+            </select>
+        </div>
+
+        <button class="btn-pdf" onclick="generatePDF()">📄 Save as PDF</button>
+    </div>
+
+    <!-- WRAPPER FOR PDF GENERATION -->
+    <div id="pdf-content">
+
+        <!-- HEADER -->
+        <div class="header-top">
+            <div>A.Y. <span id="val_ay_head">-</span></div>
+            <div id="val_itr_code" style="font-size: 11pt;">Form: -</div>
+        </div>
+
+        <!-- ASSESSEE DETAILS -->
+        <table class="assessee-table">
+            <tr><td class="lbl">Name</td><td class="colon">:</td><td class="val uppercase" id="val_name">-</td></tr>
+            <tr><td class="lbl">Father's / Signatory</td><td class="colon">:</td><td class="val uppercase" id="val_father">-</td></tr>
+            <tr><td class="lbl">Mobile No.</td><td class="colon">:</td><td class="val" id="val_mobile">-</td></tr>
+            <tr><td class="lbl">E-mail id</td><td class="colon">:</td><td class="val" style="font-weight: normal; text-decoration: underline; color: blue;" id="val_email">-</td></tr>
+            <tr><td class="lbl">Address</td><td class="colon">:</td><td class="val" style="font-weight: normal;" id="val_address">-</td></tr>
+        </table>
+
+        <div class="split-details">
+            <div class="split-col">
+                <table>
+                    <tr><td class="lbl">Previous Year</td><td class="colon">:</td><td class="val" id="val_py">-</td></tr>
+                    <tr><td class="lbl">PAN</td><td class="colon">:</td><td class="val uppercase" id="val_pan">-</td></tr>
+                    <tr><td class="lbl">Date of Birth</td><td class="colon">:</td><td class="val" id="val_dob">-</td></tr>
+                </table>
+            </div>
+            <div class="split-col">
+                <table>
+                    <tr><td class="lbl">Status</td><td class="colon">:</td><td class="val uppercase" id="val_status">INDIVIDUAL</td></tr>
+                    <tr><td class="lbl">Resident</td><td class="colon">:</td><td class="val uppercase" id="val_resident">RESIDENT</td></tr>
+                    <tr><td class="lbl">Tax Regime</td><td class="colon">:</td><td class="val" id="val_regime">-</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- MAIN COMPUTATION SUMMARY -->
+        <div class="text-center" style="margin-top: 30px; margin-bottom: 20px;">
+            <span class="bold uppercase" style="font-size: 14pt; text-decoration: underline;">COMPUTATION OF INCOME</span>
+        </div>
+        
+        <table class="comp-table" style="border: none;">
+            <thead>
+                <tr>
+                    <th width="50%">Particulars</th>
+                    <th width="15%">Sch.No</th>
+                    <th class="num" width="15%">Rs.</th>
+                    <th class="num" width="20%">Rs.</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- SALARY -->
+                <tr class="itr-dependent" data-itr="ITR-1,ITR-2,ITR-3,ITR-4">
+                    <td class="bold"><span class="bullet">■</span> Income from Salary</td>
+                    <td></td><td></td><td></td>
+                </tr>
+                <tr class="itr-dependent" data-itr="ITR-1,ITR-2,ITR-3,ITR-4">
+                    <td class="indent">Income chargeable under the head "Salaries"</td>
+                    <td>1</td><td class="num"></td><td class="num bold" id="val_salary_net_sum">0</td>
+                </tr>
+
+                <!-- HOUSE PROPERTY -->
+                <tr class="itr-dependent" data-itr="ITR-1,ITR-2,ITR-3,ITR-4,ITR-5,ITR-6">
+                    <td class="bold"><span class="bullet">■</span> Income from House Property</td>
+                    <td></td><td></td><td></td>
+                </tr>
+                <tr class="itr-dependent" data-itr="ITR-1,ITR-2,ITR-3,ITR-4,ITR-5,ITR-6">
+                    <td class="indent">Income chargeable under the head "House Property"</td>
+                    <td>2</td><td class="num"></td><td class="num bold" id="val_hp_net_sum">0</td>
+                </tr>
+
+                <!-- BUSINESS / PROFESSION -->
+                <tr class="itr-dependent" data-itr="ITR-3,ITR-4,ITR-5,ITR-6">
+                    <td class="bold"><span class="bullet">■</span> Profits and gains of Business or Profession</td>
+                    <td></td><td></td><td></td>
+                </tr>
+                
+                <tr class="hide-if-zero itr-dependent" data-itr="ITR-3,ITR-5,ITR-6">
+                    <td class="indent">Net Profit Before Tax as per P & L a/c</td>
+                    <td></td><td class="num" id="val_comp_bp_pbt">0</td><td></td>
+                </tr>
+                <tr class="hide-if-zero itr-dependent" data-itr="ITR-3,ITR-5,ITR-6">
+                    <td class="indent">Add: Depreciation debited to P & L a/c</td>
+                    <td></td><td class="num" id="val_comp_bp_add">0</td><td></td>
+                </tr>
+                <tr class="hide-if-zero itr-dependent" data-itr="ITR-3,ITR-5,ITR-6">
+                    <td class="indent">Less: Depreciation as per IT Act</td>
+                    <td></td><td class="num" id="val_comp_bp_less">0</td><td></td>
+                </tr>
+                <tr class="itr-dependent" data-itr="ITR-3,ITR-4,ITR-5,ITR-6">
+                    <td class="indent">Income chargeable under the head "Business and Profession"</td>
+                    <td>3</td><td class="num"></td><td class="num bold" id="val_bp_net_sum">0</td>
+                </tr>
+
+                <!-- CAPITAL GAINS -->
+                <tr class="itr-dependent" data-itr="ITR-2,ITR-3,ITR-5,ITR-6">
+                    <td class="bold"><span class="bullet">■</span> Capital Gains</td>
+                    <td></td><td></td><td></td>
+                </tr>
+                <tr class="itr-dependent" data-itr="ITR-2,ITR-3,ITR-5,ITR-6">
+                    <td class="indent">Income chargeable under the head "Capital Gains"</td>
+                    <td>4</td><td class="num"></td><td class="num bold" id="val_cg_net_sum">0</td>
+                </tr>
+
+                <!-- OTHER SOURCES -->
+                <tr class="itr-dependent" data-itr="ITR-1,ITR-2,ITR-3,ITR-4,ITR-5,ITR-6">
+                    <td class="bold"><span class="bullet">■</span> Income from other sources</td>
+                    <td></td><td></td><td></td>
+                </tr>
+                <tr class="itr-dependent" data-itr="ITR-1,ITR-2,ITR-3,ITR-4,ITR-5,ITR-6">
+                    <td class="indent">Income chargeable under the head "Other Sources"</td>
+                    <td>5</td><td class="num"></td><td class="num bold" id="val_os_net_sum">0</td>
+                </tr>
+
+                <!-- GROSS TOTAL -->
+                <tr class="line-top" style="background-color: var(--light-grey);">
+                    <td class="bold"><span class="bullet">■</span> Total Income (Gross)</td>
+                    <td></td><td></td><td class="num bold" id="val_gti">0</td>
+                </tr>
+                <tr class="itr-dependent" data-itr="ITR-1,ITR-2,ITR-3,ITR-4,ITR-5,ITR-6">
+                    <td class="indent">Less: Deductions under Chapter VI-A</td>
+                    <td>6</td><td class="num"></td><td class="num" id="val_deductions_sum">0</td>
+                </tr>
+
+                <!-- NET TAXABLE INCOME -->
+                <tr class="line-top" style="background-color: var(--light-grey);">
+                    <td class="bold">Total income rounded off u/s 288A</td>
+                    <td></td><td></td><td class="num bold" id="val_total_income">0</td>
+                </tr>
+                
+                <!-- TAX COMPUTATION -->
+                <tr><td colspan="4" style="padding-top: 15px; border-bottom: none;"></td></tr>
+                <tr class="line-top">
+                    <td>Tax on total income</td><td></td><td class="num"></td><td class="num" id="val_tax_payable">0</td>
+                </tr>
+                <tr class="hide-if-zero">
+                    <td>Less: Rebate u/s 87A</td><td></td><td class="num"></td><td class="num" id="val_rebate">0</td>
+                </tr>
+                <tr class="hide-if-zero">
+                    <td>Add: Health and Education Cess</td><td></td><td class="num"></td><td class="num" id="val_cess">0</td>
+                </tr>
+                <tr class="hide-if-zero">
+                    <td>Less: Relief u/s 89</td><td></td><td class="num"></td><td class="num" id="val_relief89">0</td>
+                </tr>
+                <tr class="hide-if-zero">
+                    <td>Add: Interest u/s 234A/B/C & Late Fees</td><td></td><td class="num"></td><td class="num" id="val_interest">0</td>
+                </tr>
+                <tr class="hide-if-zero">
+                    <td>Less: Taxes Paid (As per Schedule 7)</td><td>7</td><td class="num"></td><td class="num" id="val_tds">0</td>
+                </tr>
+                <tr class="line-top line-double-bottom" style="background-color: var(--light-grey);">
+                    <td class="bold" id="lbl_refundable">Tax Refundable / (Payable)</td><td></td><td></td><td class="num bold" id="val_refundable">0</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- SCHEDULE 1: SALARY -->
+        <div class="schedule itr-dependent" data-itr="ITR-1,ITR-2,ITR-3,ITR-4" id="sch_salary">
+            <div class="sch-title">Schedule 1</div>
+            <div class="sch-subtitle">Salary Income</div>
+            <table class="comp-table">
+                <thead>
+                    <tr>
+                        <th>Particulars</th>
+                        <th class="num" width="20%">Rs.</th>
+                        <th class="num" width="20%">Rs.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="hide-if-zero">
+                        <td>Gross Salary (Sec 17(1))</td><td class="num" id="val_sal_gross">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Value of Perquisites (Sec 17(2))</td><td class="num" id="val_sal_perq">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Profit in lieu of Salary (Sec 17(3))</td><td class="num" id="val_sal_profit">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Less: Allowances exempt u/s 10</td><td class="num" id="val_sal_sec10">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero line-top" style="background-color: #fafafa;">
+                        <td class="bold">Net Salary</td><td class="num bold" id="val_sal_net_sub">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Less: Standard Deduction u/s 16(ia)</td><td class="num" id="val_sal_std">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Less: Entertainment Allowance u/s 16(ii)</td><td class="num" id="val_sal_ent">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Less: Professional Tax u/s 16(iii)</td><td class="num" id="val_sal_prof">0</td><td></td>
+                    </tr>
+                    <tr class="line-top" style="background-color: var(--light-grey);">
+                        <td class="bold">Income chargeable under the head "Salaries"</td><td></td><td class="num bold" id="val_sal_net_sched">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- SCHEDULE 2: HOUSE PROPERTY -->
+        <div class="schedule itr-dependent" data-itr="ITR-1,ITR-2,ITR-3,ITR-4,ITR-5,ITR-6" id="sch_hp">
+            <div class="sch-title">Schedule 2</div>
+            <div class="sch-subtitle">Income from House Property</div>
+            <table class="comp-table">
+                <thead>
+                    <tr>
+                        <th>Particulars</th>
+                        <th class="num" width="20%">Rs.</th>
+                        <th class="num" width="20%">Rs.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="hide-if-zero">
+                        <td>Gross Rent Received / Receivable / Letable Value</td><td class="num" id="val_hp_gross">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Less: Taxes Paid to Local Authority (Municipal Taxes)</td><td class="num" id="val_hp_muncipal">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero line-top" style="background-color: #fafafa;">
+                        <td class="bold">Annual Value</td><td class="num bold" id="val_hp_nav">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Less: Standard Deduction u/s 24(a) (30% of NAV)</td><td class="num" id="val_hp_std">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Less: Interest on Borrowed Capital u/s 24(b)</td><td class="num" id="val_hp_int">0</td><td></td>
+                    </tr>
+                    <tr class="line-top" style="background-color: var(--light-grey);">
+                        <td class="bold">Income chargeable under the head "House Property"</td><td></td><td class="num bold" id="val_hp_net_sched">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- SCHEDULE 3: BUSINESS & PROFESSION (PRESUMPTIVE) -->
+        <div class="schedule itr-dependent" data-itr="ITR-3,ITR-4,ITR-5,ITR-6" id="sch_bp">
+            <div class="sch-title">Schedule 3</div>
+            <div class="sch-subtitle">Profits and gains of Business or Profession (Presumptive / Summary)</div>
+            <div style="font-size: 9pt; margin-bottom: 10px;" class="hide-if-zero">Nature of Business: <span class="bold uppercase" id="val_nature_biz">-</span></div>
+            <table class="comp-table">
+                <thead>
+                    <tr>
+                        <th>Receipts Mode / Particulars</th>
+                        <th class="num" width="25%">Turnover / Receipts</th>
+                        <th class="num" width="10%">%</th>
+                        <th class="num" width="20%">Profits (Rs.)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="hide-if-zero itr-dependent" data-itr="ITR-3,ITR-4,ITR-5,ITR-6">
+                        <td>Bank / Acc Payee (Sec 44AD)</td>
+                        <td class="num" id="val_bp_gross_bank">0</td>
+                        <td class="num" id="val_bp_pct_bank">6%</td>
+                        <td class="num" id="val_bp_prof_bank">0</td>
+                    </tr>
+                    <tr class="hide-if-zero itr-dependent" data-itr="ITR-3,ITR-4,ITR-5,ITR-6">
+                        <td>Others / Cash (Sec 44AD)</td>
+                        <td class="num" id="val_bp_gross_cash">0</td>
+                        <td class="num" id="val_bp_pct_cash">8%</td>
+                        <td class="num" id="val_bp_prof_cash">0</td>
+                    </tr>
+                    <tr class="hide-if-zero itr-dependent" data-itr="ITR-3,ITR-4,ITR-5,ITR-6">
+                        <td>Profession (Sec 44ADA)</td>
+                        <td class="num" id="val_bp_gross_ada">0</td>
+                        <td class="num" id="val_bp_pct_ada">50%</td>
+                        <td class="num" id="val_bp_prof_ada">0</td>
+                    </tr>
+                    <tr class="hide-if-zero itr-dependent" data-itr="ITR-3,ITR-4,ITR-5,ITR-6">
+                        <td>Goods Carriages (Sec 44AE)</td>
+                        <td class="num">-</td>
+                        <td class="num">-</td>
+                        <td class="num" id="val_bp_prof_ae">0</td>
+                    </tr>
+                    <tr class="hide-if-zero line-top itr-dependent" data-itr="ITR-3,ITR-4,ITR-5,ITR-6" style="background-color: #fafafa;">
+                        <td class="bold">Total Presumptive Profit</td>
+                        <td class="num bold" id="val_bp_gross_tot">0</td>
+                        <td class="num">-</td>
+                        <td class="num bold" id="val_bp_profit_presump">0</td>
+                    </tr>
+                    <tr class="hide-if-zero itr-dependent" data-itr="ITR-3,ITR-5,ITR-6">
+                        <td>Net Profit as per Regular Books of Accounts (PBT)</td>
+                        <td class="num">-</td><td class="num">-</td>
+                        <td class="num" id="val_bp_profit_reg">0</td>
+                    </tr>
+                    <tr class="line-top" style="background-color: var(--light-grey);">
+                        <td colspan="3" class="bold">Total Chargeable under "Business and Profession"</td>
+                        <td class="num bold" id="val_bp_net_sched">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- SCHEDULE 4: CAPITAL GAINS -->
+        <div class="schedule itr-dependent" data-itr="ITR-2,ITR-3,ITR-5,ITR-6" id="sch_cg">
+            <div class="sch-title">Schedule 4</div>
+            <div class="sch-subtitle">Capital Gains</div>
+            <table class="comp-table">
+                <thead>
+                    <tr>
+                        <th>Particulars</th>
+                        <th class="num" width="20%">Rs.</th>
+                        <th class="num" width="20%">Rs.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="hide-if-zero">
+                        <td>STCG on Equity/Mutual Funds (Sec 111A)</td><td class="num" id="val_cg_111a">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Other STCG (Normal Rates)</td><td class="num" id="val_cg_stcg_other">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>LTCG on Equity/Mutual Funds (Sec 112A)</td><td class="num" id="val_cg_112a">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Other LTCG (Sec 112)</td><td class="num" id="val_cg_ltcg_other">0</td><td></td>
+                    </tr>
+                    <tr class="line-top" style="background-color: var(--light-grey);">
+                        <td class="bold">Total Capital Gains</td><td></td><td class="num bold" id="val_cg_net_sched">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- SCHEDULE 5: OTHER SOURCES -->
+        <div class="schedule itr-dependent" data-itr="ITR-1,ITR-2,ITR-3,ITR-4,ITR-5,ITR-6" id="sch_os">
+            <div class="sch-title">Schedule 5</div>
+            <div class="sch-subtitle">Interest Income and Other Sources</div>
+            <table class="comp-table">
+                <thead>
+                    <tr>
+                        <th>Particulars</th>
+                        <th class="num" width="20%">Rs.</th>
+                        <th class="num" width="20%">Rs.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="hide-if-zero">
+                        <td>Interest on Savings a/c</td><td class="num" id="val_os_sav">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Interest from Deposits (FD/Post Office)</td><td class="num" id="val_os_fd">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Dividend Income</td><td class="num" id="val_os_div">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Any Other Income (Family Pension, etc.)</td><td class="num" id="val_os_other">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Less: Deductions u/s 57</td><td class="num" id="val_os_ded">0</td><td></td>
+                    </tr>
+                    <tr class="line-top" style="background-color: var(--light-grey);">
+                        <td class="bold">Income chargeable under the head "Other Sources"</td><td></td><td class="num bold" id="val_os_net_sched">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- SCHEDULE 6: DEDUCTIONS -->
+        <div class="schedule itr-dependent" data-itr="ITR-1,ITR-2,ITR-3,ITR-4,ITR-5,ITR-6" id="sch_via">
+            <div class="sch-title">Schedule 6</div>
+            <div class="sch-subtitle">Deductions under Chapter VI-A</div>
+            <table class="comp-table">
+                <thead>
+                    <tr>
+                        <th>Section</th>
+                        <th class="num" width="20%">Rs.</th>
+                        <th class="num" width="20%">Rs.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="hide-if-zero">
+                        <td>80C (Life Insurance, PPF, EPF, ELSS, Housing Loan Principal)</td><td class="num" id="val_80c">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>80CCC & 80CCD(1) (Pension Funds / NPS)</td><td class="num" id="val_80ccc">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>80CCD(1B) (NPS Additional Contribution)</td><td class="num" id="val_80ccd1b">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>80D (Health Insurance Premium / Preventative Health)</td><td class="num" id="val_80d">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>80E / 80EE / 80EEA (Interest on Education / Housing Loan)</td><td class="num" id="val_80e">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>80G / 80GGA / 80GGC (Donations to Charitable Trusts)</td><td class="num" id="val_80g">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>80TTA / 80TTB (Interest on Savings / Deposits)</td><td class="num" id="val_80tta">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Other Deductions (80DD, 80DDB, 80U)</td><td class="num" id="val_80oth">0</td><td></td>
+                    </tr>
+                    <tr class="line-top" style="background-color: var(--light-grey);">
+                        <td class="bold">Total Deductions under Chapter VI-A</td><td></td><td class="num bold" id="val_deductions_sched">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- SCHEDULE 7: TAXES PAID -->
+        <div class="schedule itr-dependent" data-itr="ITR-1,ITR-2,ITR-3,ITR-4,ITR-5,ITR-6" id="sch_taxes">
+            <div class="sch-title">Schedule 7</div>
+            <div class="sch-subtitle">Details of Taxes Paid</div>
+            <table class="comp-table">
+                <thead>
+                    <tr>
+                        <th>Particulars</th>
+                        <th class="num" width="20%">Rs.</th>
+                        <th class="num" width="20%">Rs.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="hide-if-zero">
+                        <td>TDS from Salary</td><td class="num" id="val_tds_sal">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>TDS from Other Income</td><td class="num" id="val_tds_oth">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>TCS Claimed</td><td class="num" id="val_tcs">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Advance Tax Paid</td><td class="num" id="val_adv_tax">0</td><td></td>
+                    </tr>
+                    <tr class="hide-if-zero">
+                        <td>Self-Assessment Tax Paid</td><td class="num" id="val_sa_tax">0</td><td></td>
+                    </tr>
+                    <tr class="line-top" style="background-color: var(--light-grey);">
+                        <td class="bold">Total Taxes Paid</td><td></td><td class="num bold" id="val_tot_taxes_paid">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ITR-3/5/6 DETAILED REGULAR PROFIT & LOSS (T-FORMAT) -->
+        <div class="schedule itr-dependent" data-itr="ITR-3,ITR-5,ITR-6" id="sch_pl3">
+            <div class="sch-title">Part A - Profit & Loss Account (Detailed)</div>
+            <div class="t-format">
+                <!-- DR SIDE -->
+                <div class="t-side">
+                    <table class="t-table">
+                        <thead>
+                            <tr>
+                                <th>Particulars (Dr.)</th>
+                                <th class="num" width="30%">Rs.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="hide-if-zero">
+                                <td>Opening Stock</td>
+                                <td class="num" id="val_pl_op_stock">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Purchases (Net)</td>
+                                <td class="num" id="val_pl_purchases">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Direct / Manufacturing Expenses</td>
+                                <td class="num" id="val_pl_direct_exp">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Duties and Taxes Paid</td>
+                                <td class="num" id="val_pl_duties">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Employee Compensation / Salary</td>
+                                <td class="num" id="val_pl_emp_comp">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Power and Fuel</td>
+                                <td class="num" id="val_pl_power_fuel">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Rent</td>
+                                <td class="num" id="val_pl_rent">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Repairs to Building</td>
+                                <td class="num" id="val_pl_rep_bldg">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Repairs to Machinery</td>
+                                <td class="num" id="val_pl_rep_mach">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Insurance</td>
+                                <td class="num" id="val_pl_insurance">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Workmen & Staff Welfare</td>
+                                <td class="num" id="val_pl_welfare">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Advertisement</td>
+                                <td class="num" id="val_pl_adv">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Commission</td>
+                                <td class="num" id="val_pl_comm">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Traveling & Conveyance</td>
+                                <td class="num" id="val_pl_travel">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Audit Fee</td>
+                                <td class="num" id="val_pl_audit">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Interest / Finance Costs</td>
+                                <td class="num" id="val_pl_finance">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Depreciation & Amortisation</td>
+                                <td class="num" id="val_pl_depr">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Other Expenses</td>
+                                <td class="num" id="val_pl_other_exp">0</td>
+                            </tr>
+                            <tr><td colspan="2" style="padding-top:10px;"></td></tr>
+                            <tr class="hide-if-zero line-top" style="background-color: var(--light-grey);">
+                                <td class="bold">Net Profit Before Tax (PBT)</td>
+                                <td class="num bold" id="val_pl3_pbt_t">0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="t-footer">
+                        <span>Total</span>
+                        <span id="val_pl_dr_tot">0</span>
+                    </div>
+                </div>
+                
+                <!-- CR SIDE -->
+                <div class="t-side">
+                    <table class="t-table">
+                        <thead>
+                            <tr>
+                                <th>Particulars (Cr.)</th>
+                                <th class="num" width="30%">Rs.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="hide-if-zero">
+                                <td>Sales / Gross Receipts</td>
+                                <td class="num" id="val_pl_revenue">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Other Operating Revenues</td>
+                                <td class="num" id="val_pl_other_op">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Other Income</td>
+                                <td class="num" id="val_pl_other_inc">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Closing Stock</td>
+                                <td class="num" id="val_pl_cl_stock">0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="t-footer">
+                        <span>Total</span>
+                        <span id="val_pl_cr_tot">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ITR-3/5/6 DETAILED BALANCE SHEET (T-FORMAT) -->
+        <div class="schedule itr-dependent" data-itr="ITR-3,ITR-5,ITR-6" id="sch_bs3">
+            <div class="sch-title">Part A - Balance Sheet (Detailed)</div>
+            <div class="t-format">
+                <!-- LIABILITIES -->
+                <div class="t-side">
+                    <table class="t-table">
+                        <thead>
+                            <tr>
+                                <th>Liabilities</th>
+                                <th class="num" width="30%">Rs.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="hide-if-zero">
+                                <td>Proprietor's / Partners' Capital</td>
+                                <td class="num" id="val_bs_cap">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Reserves & Surplus</td>
+                                <td class="num" id="val_bs_res">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Secured Loans - From Banks</td>
+                                <td class="num" id="val_bs_sec_bank">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Secured Loans - From Others</td>
+                                <td class="num" id="val_bs_sec_oth">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Unsecured Loans - From Banks</td>
+                                <td class="num" id="val_bs_unsec_bank">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Unsecured Loans - From Others</td>
+                                <td class="num" id="val_bs_unsec_oth">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Advances Received</td>
+                                <td class="num" id="val_bs_advances">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Sundry Creditors</td>
+                                <td class="num" id="val_bs_trade_pay">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Other Provisions</td>
+                                <td class="num" id="val_bs_provisions">0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="t-footer">
+                        <span>Total Liabilities</span>
+                        <span id="val_bs_tot_liab">0</span>
+                    </div>
+                </div>
+                
+                <!-- ASSETS -->
+                <div class="t-side">
+                    <table class="t-table">
+                        <thead>
+                            <tr>
+                                <th>Assets</th>
+                                <th class="num" width="30%">Rs.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="hide-if-zero">
+                                <td>Fixed Assets (Net Block)</td>
+                                <td class="num" id="val_bs_ppe">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Investments</td>
+                                <td class="num" id="val_bs_investments">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Inventories (Closing Stock)</td>
+                                <td class="num" id="val_bs_inventories">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Sundry Debtors</td>
+                                <td class="num" id="val_bs_trade_rec">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Cash-in-hand</td>
+                                <td class="num" id="val_bs_cash">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Balance with Banks</td>
+                                <td class="num" id="val_bs_bank">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Loans and Advances</td>
+                                <td class="num" id="val_bs_lt_adv">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Other Current Assets</td>
+                                <td class="num" id="val_bs_oth_curr_ast">0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="t-footer">
+                        <span>Total Assets</span>
+                        <span id="val_bs_tot_ast">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FINANCIAL PARTICULARS (ITR-4 BALANCE SHEET) -->
+        <div class="schedule itr-dependent" data-itr="ITR-4" id="sch_bs4">
+            <div class="sch-title">Financial particulars of the Business</div>
+            <div class="t-format">
+                <!-- LIABILITIES -->
+                <div class="t-side">
+                    <table class="t-table">
+                        <thead>
+                            <tr>
+                                <th>Liabilities</th>
+                                <th class="num" width="35%">Rs.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="hide-if-zero">
+                                <td>Partners/Members/Proprietor Own Capital</td>
+                                <td class="num" id="val_bs4_cap">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Secured Loans</td>
+                                <td class="num" id="val_bs4_sec_loan">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Unsecured Loans</td>
+                                <td class="num" id="val_bs4_unsec_loan">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Advances</td>
+                                <td class="num" id="val_bs4_advances">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Sundry Creditors</td>
+                                <td class="num" id="val_bs4_cred">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Other Liabilities</td>
+                                <td class="num" id="val_bs4_oth_liab">0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="t-footer">
+                        <span>Total Capital & Liabilities</span>
+                        <span id="val_bs4_tot_liab">0</span>
+                    </div>
+                </div>
+
+                <!-- ASSETS -->
+                <div class="t-side">
+                    <table class="t-table">
+                        <thead>
+                            <tr>
+                                <th>Assets</th>
+                                <th class="num" width="35%">Rs.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="hide-if-zero">
+                                <td>Fixed Assets</td>
+                                <td class="num" id="val_bs4_fixed">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Investments</td>
+                                <td class="num" id="val_bs4_inv">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Inventories</td>
+                                <td class="num" id="val_bs4_inventories">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Sundry Debtors</td>
+                                <td class="num" id="val_bs4_debtors">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Balance with Banks</td>
+                                <td class="num" id="val_bs4_bank">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Cash-in-hand</td>
+                                <td class="num" id="val_bs4_cash">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Loans and Advances</td>
+                                <td class="num" id="val_bs4_loan_adv">0</td>
+                            </tr>
+                            <tr class="hide-if-zero">
+                                <td>Other Assets</td>
+                                <td class="num" id="val_bs4_oth_ast">0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="t-footer">
+                        <span>Total Assets</span>
+                        <span id="val_bs4_tot_asset">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BANK ACCOUNTS TABLE -->
+        <div class="schedule itr-dependent" data-itr="ITR-1,ITR-2,ITR-3,ITR-4,ITR-5,ITR-6" id="sch_bank">
+            <div class="sch-title">Bank Accounts in India</div>
+            <table class="comp-table" id="bank_table">
+                <thead>
+                    <tr>
+                        <th>Bank Name and Account No.</th>
+                        <th>IFS Code</th>
+                        <th>Type</th>
+                        <th>For refund?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- JS will populate rows here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- SIGNATURE BLOCK -->
+        <div style="margin-top: 60px; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+                <div>Date: <span class="bold" id="val_sign_date">_________________</span></div>
+                <div style="margin-top: 10px;">Place: <span class="bold uppercase" id="val_place">-</span></div>
+            </div>
+            <div class="text-center">
+                <div>_____________________________</div>
+                <div class="bold uppercase" style="margin-top: 5px;">(<span id="val_sign_name">-</span>)</div>
+            </div>
+        </div>
+
+    </div> <!-- END PDF CONTENT WRAPPER -->
+
+    <!-- Hidden validation tags -->
+    <div style="display:none;">
+        <span id="val_deductions_sched"></span>
+        <span id="val_cg_net_sched"></span>
+        <span id="val_hp_net_sched"></span>
+    </div>
+
+    <script>
+        // PDF GENERATION FUNCTION - Native Print Dialog for Selectable/Vector PDF
+        function generatePDF() {
+            window.print();
+        }
+
+        // Formatting Utilities
+        const formatCurrency = (num) => {
+            if (num === undefined || num === null || isNaN(num) || String(num).trim() === "") return "0";
+            return Number(num).toLocaleString('en-IN');
+        };
+
+        const formatDate = (dateStr) => {
+            if (!dateStr || String(dateStr).length < 10) return "-";
+            const parts = String(dateStr).substring(0, 10).split('-');
+            if (parts.length === 3) {
+                const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                return `${parts[2]}-${months[parseInt(parts[1])-1]}-${parts[0]}`;
+            }
+            return dateStr;
+        };
+
+        // NEW ADVANCED DEEP SEARCH ENGINE
+        // Safely extracts specific keys avoiding known collisions
+        const deepSearch = (obj, keys) => {
+            let results = {}; 
+            keys.forEach(k => results[k.toLowerCase()] = []);
+            
+            const search = (o) => {
+                if (!o || typeof o !== 'object') return;
+                for (let k in o) {
+                    let kLower = k.toLowerCase();
+                    if (results[kLower] !== undefined) {
+                        let val = o[k];
+                        if (val !== null && val !== undefined && val !== "") {
+                            results[kLower].push(val);
+                        }
+                    }
+                    if (typeof o[k] === 'object') {
+                        search(o[k]);
+                    }
+                }
+            };
+            search(obj);
+            
+            for (let key of keys) {
+                let vals = results[key.toLowerCase()];
+                // Priority 1: Non-zero numbers
+                for (let val of vals) {
+                    if (typeof val === 'number' && val !== 0) return val;
+                }
+                // Priority 2: Non-zero numeric strings
+                for (let val of vals) {
+                    if (typeof val === 'string' && val.trim() !== "0" && !isNaN(Number(val))) return Number(val);
+                }
+                // Priority 3: Non-empty strings (e.g. names)
+                for (let val of vals) {
+                    if (typeof val === 'string' && val.trim() !== "0" && val.trim() !== "-") return val;
+                }
+            }
+            return 0;
+        };
+
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = val;
+        };
+
+        // File Handler
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                let data;
+                try {
+                    data = JSON.parse(e.target.result);
+                } catch (error) {
+                    alert("Error parsing JSON file. Ensure it is a valid, uncorrupted Income Tax JSON.");
+                    return;
+                }
+
+                try {
+                    populateData(data);
+                } catch(error) {
+                    alert("Error mapping data. The form generation encountered an issue.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Data Population Engine
+        function populateData(data) {
+            if (!data || !data.ITR) return;
+            
+            const itrType = Object.keys(data.ITR)[0]; 
+            const root = data.ITR[itrType];
+            if (!root) return;
+
+            // --- HEADER MAPPING ---
+            const fName = deepSearch(root, ['FirstName']);
+            const mName = deepSearch(root, ['MiddleName']);
+            const lName = deepSearch(root, ['SurNameOrOrgName', 'LastName']);
+            
+            const nameParts = [];
+            if (fName && fName !== 0) nameParts.push(fName);
+            if (mName && mName !== 0) nameParts.push(mName);
+            if (lName && lName !== 0) nameParts.push(lName);
+            
+            const fullName = nameParts.join(' ').trim().replace(/\s+/g, ' ') || "-";
+            
+            setVal('val_name', fullName);
+            setVal('val_sign_name', fullName);
+            setVal('val_father', deepSearch(root, ['FatherName']) || "-");
+            setVal('val_place', deepSearch(root, ['Place']) || "-");
+            setVal('val_sign_date', formatDate(deepSearch(root, ['Date'])) || "_________________");
+
+            const resNo = deepSearch(root, ['ResidenceNo']);
+            const resName = deepSearch(root, ['ResidenceName']);
+            const road = deepSearch(root, ['RoadOrStreet']);
+            const locality = deepSearch(root, ['LocalityOrArea']);
+            const city = deepSearch(root, ['CityOrTownOrDistrict']);
+            const stateCode = deepSearch(root, ['StateCode']);
+            const pinCode = deepSearch(root, ['PinCode']);
+
+            const addressParts = [resNo, resName, road, locality, city, stateCode, pinCode && pinCode !== 0 ? `INDIA - ${pinCode}` : ""];
+            setVal('val_address', addressParts.filter(p => p && p !== 0 && String(p).trim() !== "0" && String(p).trim() !== "").join(', ') || "-");
+
+            let email = deepSearch(root, ['EmailAddress', 'EmailAddressSecondary', 'EmailAddressSec']);
+            setVal('val_email', email && email !== 0 ? email : "-");
+            
+            let mobile = deepSearch(root, ['MobileNo', 'MobileNoSec']);
+            setVal('val_mobile', mobile && mobile !== 0 ? mobile : "-");
+            
+            // Core Identity
+            let pan = deepSearch(root, ['PAN', 'AssesseeVerPAN']);
+            setVal('val_pan', pan && pan !== 0 ? pan : "-");
+            
+            // SECURITY REDACTION
+            setVal('val_aadhar', "[Aadhaar Redacted]"); 
+            
+            let dob = deepSearch(root, ['DOB', 'DateOFFormOrIncorp']);
+            setVal('val_dob', dob && dob !== 0 ? formatDate(dob) : "-");
+
+            const statusCode = String(deepSearch(root, ['Status', 'StatusOrCompanyType']) || "");
+            let statusText = "INDIVIDUAL";
+            if (statusCode === "F" || statusCode === "11") statusText = "FIRM";
+            else if (statusCode === "H" || statusCode === "2") statusText = "HUF";
+            else if (statusCode === "C" || statusCode === "10" || statusCode === "6" || statusCode === "7") statusText = "COMPANY";
+            else if (statusCode === "14") statusText = "TRUST / AOP / BOI";
+            setVal('val_status', statusText);
+            
+            const residentStatus = deepSearch(root, ['ResidentialStatus']);
+            let residentText = "RESIDENT";
+            if (residentStatus === "NRI") residentText = "NON RESIDENT";
+            if (residentStatus === "NOR") residentText = "RESIDENT BUT NOT ORDINARILY RESIDENT";
+            setVal('val_resident', residentText);
+
+            // DYNAMIC A.Y. & P.Y. FORMATTING
+            const ayVal = deepSearch(root, ['AssessmentYear']);
+            if (ayVal && ayVal !== 0) {
+                let ayStr = String(ayVal).replace(/\D/g, ''); 
+                if (ayStr.length >= 4) {
+                    let ayStart = parseInt(ayStr.slice(0, 4));
+                    let ayEnd = String(ayStart + 1).slice(-2);
+                    setVal('val_ay_head', `${ayStart}-${ayEnd}`);
+                    setVal('val_py', `${ayStart - 1}-${ayStart}`);
+                }
+            }
+            
+            // Dynamic Form detection
+            let formName = String(deepSearch(root, ['FormName']) || itrType.replace('ITR', 'ITR-')).trim();
+            const itrSelect = document.getElementById('itrSelector');
+            for (let i = 0; i < itrSelect.options.length; i++) {
+                if (String(itrSelect.options[i].value).trim() === formName) {
+                    itrSelect.selectedIndex = i;
+                    break;
+                }
+            }
+            
+            const newReg = deepSearch(root, ['OptOutNewTaxRegime']) || "N";
+            setVal('val_regime', newReg === "Y" ? "Old Regime" : "New Regime");
+
+            // --- INCOME MAPPING ---
+            const salNet = deepSearch(root, ['IncomeFromSal', 'TotIncUnderHeadSalaries', 'Salaries']) || 0;
+            setVal('val_salary_net_sum', formatCurrency(salNet));
+            setVal('val_sal_net_sched', formatCurrency(salNet));
+            
+            let hpNet = deepSearch(root, ['TotalIncomeChargeableUnHP', 'IncomeFromHP']) || 0;
+            setVal('val_hp_net_sum', formatCurrency(hpNet));
+            setVal('val_hp_net_sched', formatCurrency(hpNet));
+
+            const bpNet = deepSearch(root, ['IncomeFromBusinessProf', 'TotProfBusGain', 'NetPLBusOthThanSpec7A7B7C', 'IncChargeableUnderBus', 'IncChrgUnHdProftGain']) || 0;
+            setVal('val_bp_net_sum', formatCurrency(bpNet));
+            setVal('val_bp_net_sched', formatCurrency(bpNet));
+
+            const cgNet = deepSearch(root, ['TotalCapGains', 'TotScheduleCGFor23', 'SumOfCGIncm']) || 0;
+            setVal('val_cg_net_sum', formatCurrency(cgNet));
+            setVal('val_cg_net_sched', formatCurrency(cgNet));
+
+            const osNet = deepSearch(root, ['IncomeOthSrc', 'TotIncFromOS', 'IncChargeableFrmOthSrc', 'IncChargeable']) || 0;
+            setVal('val_os_net_sum', formatCurrency(osNet));
+            setVal('val_os_net_sched', formatCurrency(osNet));
+
+            // Detailed Schedules Breakdown
+            setVal('val_sal_gross', formatCurrency(deepSearch(root, ['GrossSalary', 'TotalGrossSalary'])));
+            setVal('val_sal_perq', formatCurrency(deepSearch(root, ['PerquisitesValue', 'ValueOfPerquisites'])));
+            setVal('val_sal_profit', formatCurrency(deepSearch(root, ['ProfitsInSalary', 'ProfitsinLieuOfSalary'])));
+            setVal('val_sal_sec10', formatCurrency(deepSearch(root, ['TotalAllwncExemptUs10', 'AllwncExtentExemptUs10'])));
+            setVal('val_sal_net_sub', formatCurrency(deepSearch(root, ['NetSalary'])));
+            setVal('val_sal_std', formatCurrency(deepSearch(root, ['DeductionUnderSection16ia', 'DeductionUs16ia'])));
+            setVal('val_sal_ent', formatCurrency(deepSearch(root, ['EntertainmntalwncUs16ii', 'EntertainmentAlw16ii'])));
+            setVal('val_sal_prof', formatCurrency(deepSearch(root, ['ProfessionalTaxUs16iii'])));
+
+            setVal('val_hp_gross', formatCurrency(hpNet)); 
+            setVal('val_hp_nav', formatCurrency(hpNet));
+
+            // Business Details
+            let bpDesc = deepSearch(root, ['Description', 'TradeName1', 'NameOfBusiness']);
+            setVal('val_nature_biz', bpDesc && bpDesc !== 0 ? bpDesc : "-");
+
+            let bpGrossBank = Number(deepSearch(root, ['GrsTrnOverBank', 'GrsTrnOverBank44ADA', 'GrsTrnOverBank44AD'])) || 0;
+            let bpGrossCash = (Number(deepSearch(root, ['GrsTotalTrnOverInCash', 'GrsTotalTrnOverInCash44ADA'])) || 0) + (Number(deepSearch(root, ['GrsTrnOverAnyOthMode', 'GrsTrnOverAnyOthMode44ADA'])) || 0);
+            if (!bpGrossBank && !bpGrossCash) {
+                bpGrossCash = Number(deepSearch(root, ['GrsTotalTrnOver'])) || 0; 
+            }
+            
+            let bpProfBank = Number(deepSearch(root, ['PersumptiveInc44AD6Per'])) || 0;
+            let bpProfCash = Number(deepSearch(root, ['PersumptiveInc44AD8Per', 'TotPersumptiveInc44AD'])) || 0;
+            
+            let adaGross = Number(deepSearch(root, ['GrsReceipt'])) || 0;
+            let adaNet = Number(deepSearch(root, ['TotPersumptiveInc44ADA'])) || 0;
+            
+            let aeNet = Number(deepSearch(root, ['TotPersumInc44AE'])) || 0; 
+
+            let totalBpGross = bpGrossBank + bpGrossCash;
+            let totalBpPresumpProf = bpProfBank + bpProfCash;
+            
+            // DYNAMIC PERCENTAGE CALCULATION (Profit / Turnover * 100)
+            let pctBank = bpGrossBank ? ((bpProfBank / bpGrossBank) * 100).toFixed(2) + '%' : '6%';
+            let pctCash = bpGrossCash ? ((bpProfCash / bpGrossCash) * 100).toFixed(2) + '%' : '8%';
+            let pctAda = adaGross ? ((adaNet / adaGross) * 100).toFixed(2) + '%' : '50%';
+
+            setVal('val_bp_gross_bank', formatCurrency(bpGrossBank));
+            setVal('val_bp_prof_bank', formatCurrency(bpProfBank));
+            setVal('val_bp_pct_bank', pctBank);
+            
+            setVal('val_bp_gross_cash', formatCurrency(bpGrossCash));
+            setVal('val_bp_prof_cash', formatCurrency(bpProfCash));
+            setVal('val_bp_pct_cash', pctCash);
+            
+            setVal('val_bp_gross_ada', formatCurrency(adaGross));
+            setVal('val_bp_prof_ada', formatCurrency(adaNet));
+            setVal('val_bp_pct_ada', pctAda);
+            
+            setVal('val_bp_prof_ae', formatCurrency(aeNet));
+
+            setVal('val_bp_gross_tot', formatCurrency(totalBpGross + adaGross));
+            setVal('val_bp_profit_presump', formatCurrency(totalBpPresumpProf + adaNet + aeNet));
+            
+            setVal('val_bp_profit_reg', formatCurrency(deepSearch(root, ['PBT', 'ProfitBfrTaxPL', 'NetProfitBeforeTaxes']))); 
+
+            const bpDeprAdd = deepSearch(root, ['DepreciationAmort', 'DepreciationAndAmortisationDebitedToPL']) || 0;
+            const bpDeprLess = deepSearch(root, ['DepreciationAllowable', 'DepreciationAllowableUnderITAct', 'TotDeprAllowITAct']) || 0;
+            const pbt = deepSearch(root, ['ProfitBfrTaxPL', 'PBT', 'NetProfitBeforeTaxes']) || 0;
+            
+            setVal('val_comp_bp_pbt', formatCurrency(pbt));
+            setVal('val_comp_bp_add', formatCurrency(bpDeprAdd));
+            setVal('val_comp_bp_less', formatCurrency(bpDeprLess));
+
+            // OS Details
+            let osSav = deepSearch(root, ['IntrstFrmSavingBank']) || 0;
+            let osFd = deepSearch(root, ['IntrstFrmTermDeposit']) || 0;
+            let osDiv = deepSearch(root, ['DividendGross']) || 0;
+            let osOth = Number(osNet) - (Number(osSav) + Number(osFd) + Number(osDiv));
+
+            setVal('val_os_sav', formatCurrency(osSav));
+            setVal('val_os_fd', formatCurrency(osFd));
+            setVal('val_os_div', formatCurrency(osDiv));
+            setVal('val_os_other', formatCurrency(osOth));
+
+            // CG Details
+            setVal('val_cg_111a', formatCurrency(deepSearch(root, ['ShortTerm20Per', 'STCG_Sec111A'])));
+            setVal('val_cg_stcg_other', formatCurrency(deepSearch(root, ['TotalShortTerm'])));
+            setVal('val_cg_112a', formatCurrency(deepSearch(root, ['LongTerm12_5Per', 'LTCG_Sec112A'])));
+            setVal('val_cg_ltcg_other', formatCurrency(deepSearch(root, ['TotalLongTerm'])));
+
+            // Deductions & Tax Mapping
+            const dTotal = deepSearch(root, ['TotalChapVIADeductions', 'TotDeductUndSchVIA']) || 0;
+            setVal('val_deductions_sum', formatCurrency(dTotal));
+            setVal('val_deductions_sched', formatCurrency(dTotal));
+
+            setVal('val_80c', formatCurrency(deepSearch(root, ['Section80C'])));
+            setVal('val_80ccc', formatCurrency(deepSearch(root, ['Section80CCC'])));
+            setVal('val_80ccd1b', formatCurrency(deepSearch(root, ['Section80CCD1B'])));
+            setVal('val_80d', formatCurrency(deepSearch(root, ['Section80D'])));
+            setVal('val_80e', formatCurrency(deepSearch(root, ['Section80E', 'Section80EE', 'Section80EEA'])));
+            setVal('val_80g', formatCurrency(deepSearch(root, ['Section80G', 'TotalDonationsUs80G'])));
+            setVal('val_80tta', formatCurrency(deepSearch(root, ['Section80TTA', 'Section80TTB'])));
+            setVal('val_80oth', formatCurrency(deepSearch(root, ['Section80DD', 'Section80U'])));
+
+            setVal('val_gti', formatCurrency(deepSearch(root, ['GrossTotIncome', 'GrossTotalIncome'])));
+            setVal('val_total_income', formatCurrency(deepSearch(root, ['TotalIncome'])));
+            
+            setVal('val_tax_payable', formatCurrency(deepSearch(root, ['TotalTaxPayable', 'TaxPayableOnTotInc', 'GrossTaxPayable', 'NetTaxLiability'])));
+            setVal('val_rebate', formatCurrency(deepSearch(root, ['Rebate87A'])));
+            setVal('val_cess', formatCurrency(deepSearch(root, ['EducationCess'])));
+            setVal('val_relief89', formatCurrency(deepSearch(root, ['Section89'])));
+            
+            const intPay = deepSearch(root, ['TotTaxPlusIntrstPay', 'TotalIntrstPay']) || 0;
+            setVal('val_interest', formatCurrency(intPay));
+            
+            const tdsSal = deepSearch(root, ['TotalTDSonSalaries']) || 0;
+            const tdsOth = deepSearch(root, ['TotalTDSonOthThanSals', 'TDS']) || 0;
+            const tcs = deepSearch(root, ['TotalTCS', 'TCS']) || 0;
+            const advTax = deepSearch(root, ['AdvanceTax']) || 0;
+            const saTax = deepSearch(root, ['SelfAssessmentTax']) || 0;
+            
+            const totTaxesPaidNode = deepSearch(root, ['TotalTaxesPaid']);
+            const totTaxes = totTaxesPaidNode ? Number(totTaxesPaidNode) : (Number(tdsSal) + Number(tdsOth) + Number(tcs) + Number(advTax) + Number(saTax));
+            
+            setVal('val_tds_sal', formatCurrency(tdsSal));
+            setVal('val_tds_oth', formatCurrency(tdsOth));
+            setVal('val_tcs', formatCurrency(tcs));
+            setVal('val_adv_tax', formatCurrency(advTax));
+            setVal('val_sa_tax', formatCurrency(saTax));
+            setVal('val_tot_taxes_paid', formatCurrency(totTaxes));
+
+            setVal('val_tds', formatCurrency(totTaxes));
+
+            const refDue = deepSearch(root, ['RefundDue']) || 0;
+            const taxDue = deepSearch(root, ['BalTaxPayable']) || 0;
+            if (refDue > 0) {
+                setVal('val_refundable', formatCurrency(refDue));
+                setVal('lbl_refundable', "Tax Refundable");
+            } else if (taxDue > 0) {
+                setVal('val_refundable', formatCurrency(taxDue));
+                setVal('lbl_refundable', "Tax Payable");
+            } else {
+                setVal('val_refundable', "0");
+            }
+
+            // --- DETAILED BALANCE SHEET (PART A-BS) MAPPING FOR ITR-3 ---
+            const cap = deepSearch(root, ['PropCap', 'TotShareCapital', 'PartnerOrMemberCap', 'PartnerMemberOwnCapital']) || 0;
+            const res = deepSearch(root, ['TotResrNSurp', 'ReservesAndSurplus']) || 0;
+            
+            const secBank = deepSearch(root, ['RupeeLoansFromBanks', 'FromBanksSecured']) || 0;
+            let finalSecOth = deepSearch(root, ['TotSecrLoan', 'SecuredLoans']) || 0;
+            
+            const unsecBank = deepSearch(root, ['FromBanksUnSecured']) || 0;
+            let finalUnsecOth = deepSearch(root, ['TotUnSecrLoan', 'UnSecuredLoans']) || 0;
+
+            const adv = deepSearch(root, ['TotalAdvances']) || 0;
+            const tradePay = deepSearch(root, ['SundryCred', 'TradePayables', 'TotalTradePayables', 'SundryCreditors', 'TotalSundryCreditors', 'TotSundryCrdAmt']) || 0;
+            const prov = deepSearch(root, ['TotProvisions', 'TotalProvisions', 'OtherProvisions', 'ProvisionForLeaveEncashment']) || 0;
+            
+            // MATH FIX: Calculate Liabilities explicitly
+            const totLiab = Number(cap) + Number(res) + Number(secBank) + Number(finalSecOth) + Number(unsecBank) + Number(finalUnsecOth) + Number(adv) + Number(tradePay) + Number(prov);
+
+            setVal('val_bs_cap', formatCurrency(cap));
+            setVal('val_bs_res', formatCurrency(res));
+            setVal('val_bs_sec_bank', formatCurrency(secBank));
+            setVal('val_bs_sec_oth', formatCurrency(finalSecOth));
+            setVal('val_bs_unsec_bank', formatCurrency(unsecBank));
+            setVal('val_bs_unsec_oth', formatCurrency(finalUnsecOth));
+            setVal('val_bs_advances', formatCurrency(adv));
+            setVal('val_bs_trade_pay', formatCurrency(tradePay));
+            setVal('val_bs_provisions', formatCurrency(prov));
+            setVal('val_bs_tot_liab', formatCurrency(totLiab));
+
+            const ppe = deepSearch(root, ['NetBlock', 'PropertyPlantEquipment', 'FixedAssets']) || 0;
+            const bsInv = deepSearch(root, ['TotInvestments', 'TotalInvestments', 'Investments']) || 0;
+            const invt = deepSearch(root, ['TotInventries', 'Inventories', 'TotalInventories', 'TotStkInTradAmt']) || 0;
+            const trRec = deepSearch(root, ['SndryDebtors', 'TradeReceivables', 'SundryDebtors', 'TotalSundryDebtors', 'TotSundryDbtAmt']) || 0;
+            
+            let cash = deepSearch(root, ['CashinHand', 'CashInHand', 'CashBalAmt']) || 0;
+            let bankBal = deepSearch(root, ['BankBal', 'BalWithBanks', 'BalanceWithBanks']) || 0;
+            if (cash === 0 && bankBal === 0) {
+                cash = deepSearch(root, ['TotCashOrBankBal']) || 0;
+            }
+
+            const ltAdv = deepSearch(root, ['TotLoanAdv', 'TotalLoansAndAdvances', 'LoansAndAdvances']) || 0;
+            const othCurrAst = deepSearch(root, ['OthCurrAsset', 'OtherCurrentAssets', 'OthCurrAssets', 'OtherAssets']) || 0;
+            
+            // MATH FIX: Calculate Assets explicitly
+            const totAst = Number(ppe) + Number(bsInv) + Number(invt) + Number(trRec) + Number(cash) + Number(bankBal) + Number(ltAdv) + Number(othCurrAst);
+
+            setVal('val_bs_ppe', formatCurrency(ppe));
+            setVal('val_bs_investments', formatCurrency(bsInv));
+            setVal('val_bs_inventories', formatCurrency(invt));
+            setVal('val_bs_trade_rec', formatCurrency(trRec));
+            setVal('val_bs_cash', formatCurrency(cash));
+            setVal('val_bs_bank', formatCurrency(bankBal));
+            setVal('val_bs_lt_adv', formatCurrency(ltAdv));
+            setVal('val_bs_oth_curr_ast', formatCurrency(othCurrAst));
+            setVal('val_bs_tot_ast', formatCurrency(totAst));
+
+            // --- DETAILED BALANCE SHEET MAPPING FOR ITR-4 ---
+            const cap4 = deepSearch(root, ['PartnerMemberOwnCapital']) || 0;
+            const secLoan4 = deepSearch(root, ['SecuredLoans']) || 0;
+            const unsecLoan4 = deepSearch(root, ['UnSecuredLoans']) || 0;
+            const adv4 = deepSearch(root, ['Advances']) || 0;
+            const cred4 = deepSearch(root, ['SundryCreditors', 'SundryCred', 'TradePayables', 'TotSundryCrdAmt']) || 0;
+            const othLiab4 = deepSearch(root, ['OthrCurrLiab']) || 0;
+            
+            const totLiab4 = Number(cap4) + Number(secLoan4) + Number(unsecLoan4) + Number(adv4) + Number(cred4) + Number(othLiab4);
+
+            const fixed4 = deepSearch(root, ['FixedAssets']) || 0;
+            const inv4 = deepSearch(root, ['Investments', 'TotInvestments', 'TotalInvestments']) || 0;
+            const invt4 = deepSearch(root, ['Inventories', 'TotInventries', 'TotStkInTradAmt']) || 0;
+            const debt4 = deepSearch(root, ['SundryDebtors', 'SndryDebtors', 'TradeReceivables', 'TotSundryDbtAmt']) || 0;
+            const bank4 = deepSearch(root, ['BalWithBanks', 'BankBal']) || 0;
+            const cash4 = deepSearch(root, ['CashinHand', 'CashInHand', 'CashBalAmt', 'TotCashOrBankBal']) || 0;
+            const loanAdv4 = deepSearch(root, ['LoansAndAdvances', 'TotLoanAdv']) || 0;
+            const othAst4 = deepSearch(root, ['OtherAssets']) || 0;
+            
+            const totAst4 = Number(fixed4) + Number(inv4) + Number(invt4) + Number(debt4) + Number(bank4) + Number(cash4) + Number(loanAdv4) + Number(othAst4);
+
+            setVal('val_bs4_cap', formatCurrency(cap4));
+            setVal('val_bs4_sec_loan', formatCurrency(secLoan4));
+            setVal('val_bs4_unsec_loan', formatCurrency(unsecLoan4));
+            setVal('val_bs4_advances', formatCurrency(adv4));
+            setVal('val_bs4_cred', formatCurrency(cred4));
+            setVal('val_bs4_oth_liab', formatCurrency(othLiab4));
+            setVal('val_bs4_tot_liab', formatCurrency(totLiab4));
+
+            setVal('val_bs4_fixed', formatCurrency(fixed4));
+            setVal('val_bs4_inv', formatCurrency(inv4));
+            setVal('val_bs4_inventories', formatCurrency(invt4));
+            setVal('val_bs4_debtors', formatCurrency(debt4));
+            setVal('val_bs4_bank', formatCurrency(bank4));
+            setVal('val_bs4_cash', formatCurrency(cash4));
+            setVal('val_bs4_loan_adv', formatCurrency(loanAdv4));
+            setVal('val_bs4_oth_ast', formatCurrency(othAst4));
+            setVal('val_bs4_tot_asset', formatCurrency(totAst4));
+
+            // --- DETAILED P&L (PART A-PL) MAPPING ---
+            const revGoods = deepSearch(root, ['SaleOfGoods']) || 0;
+            const revServ = deepSearch(root, ['SaleOfServices']) || 0;
+            const rev = deepSearch(root, ['TotRevFromOperations', 'RevenueFromOperations', 'GrossReceipts', 'SalesGrossReceiptsTotal']) || (revGoods + revServ);
+            const othOpRev = deepSearch(root, ['OtherOperatingRevenues', 'TotalOtherOperatingRevenues']) || 0;
+            const plOthInc = deepSearch(root, ['TotOthIncome', 'OtherIncome', 'TotalOfOtherIncome']) || 0;
+            const clStock = deepSearch(root, ['ClosingStock', 'ClosingStockOfFinishedStocks']) || 0;
+            const totCredPL = deepSearch(root, ['TotCreditsToPL', 'TardingAccTotCred']) || (rev + othOpRev + plOthInc + clStock);
+
+            setVal('val_pl_revenue', formatCurrency(rev));
+            setVal('val_pl_other_op', formatCurrency(othOpRev));
+            setVal('val_pl_other_inc', formatCurrency(plOthInc));
+            setVal('val_pl_cl_stock', formatCurrency(clStock));
+            setVal('val_pl_cr_tot', formatCurrency(totCredPL));
+            
+            const opStock = deepSearch(root, ['OpeningStock', 'OpeningStockOfFinishedGoods', 'OpngStckOfFinishedStcks']) || 0;
+            const purch = deepSearch(root, ['Purchases', 'PurchasesOfStockInTrade']) || 0;
+            const dirExp = deepSearch(root, ['DirectExpenses', 'TotDirectExpenses', 'TotalDirectExpenses']) || 0;
+            const duties = deepSearch(root, ['DutiesAndTaxes', 'RatesAndTaxes']) || 0;
+            
+            const empComp = deepSearch(root, ['TotEmployeeComp', 'TotalCompensationToEmployees']) || 0;
+            const plPwrFuel = deepSearch(root, ['PowerAndFuel']) || 0;
+            const plRent = deepSearch(root, ['RentExpdr', 'Rent']) || 0;
+            const plRepBldg = deepSearch(root, ['RepairsToBuilding', 'RepairsBldg']) || 0;
+            const plRepMach = deepSearch(root, ['RepairsToMachinery', 'RepairMach']) || 0;
+            const plIns = deepSearch(root, ['TotalExpenditureOnInsurance', 'Insurance']) || 0;
+            const plWelfare = deepSearch(root, ['WorkmenAndStaffWelfareExpenses', 'StaffWelfareExp']) || 0;
+            const plAdv = deepSearch(root, ['Advertisement']) || 0;
+            const plComm = deepSearch(root, ['TotalCommission', 'Commission']) || 0;
+            const plTravel = (deepSearch(root, ['TravelingExpensesOtherThanOnForeignTraveling', 'TravelExp']) || 0) + (deepSearch(root, ['ConveyanceExpenses']) || 0);
+            const plAudit = deepSearch(root, ['AuditFee']) || 0;
+            const plFinance = deepSearch(root, ['TotalInterest', 'InterestExpdr', 'FinanceCosts']) || 0;
+            const plDepr = deepSearch(root, ['DepreciationAmort', 'DepreciationAndAmortisation']) || 0;
+            const plOthExp = deepSearch(root, ['OtherExpenses', 'TotalOtherExpenses']) || 0;
+
+            setVal('val_pl_op_stock', formatCurrency(opStock));
+            setVal('val_pl_purchases', formatCurrency(purch));
+            setVal('val_pl_direct_exp', formatCurrency(dirExp));
+            setVal('val_pl_duties', formatCurrency(duties));
+            
+            setVal('val_pl_emp_comp', formatCurrency(empComp));
+            setVal('val_pl_power_fuel', formatCurrency(plPwrFuel));
+            setVal('val_pl_rent', formatCurrency(plRent));
+            setVal('val_pl_rep_bldg', formatCurrency(plRepBldg));
+            setVal('val_pl_rep_mach', formatCurrency(plRepMach));
+            setVal('val_pl_insurance', formatCurrency(plIns));
+            setVal('val_pl_welfare', formatCurrency(plWelfare));
+            setVal('val_pl_adv', formatCurrency(plAdv));
+            setVal('val_pl_comm', formatCurrency(plComm));
+            setVal('val_pl_travel', formatCurrency(plTravel));
+            setVal('val_pl_audit', formatCurrency(plAudit));
+            setVal('val_pl_finance', formatCurrency(plFinance));
+            setVal('val_pl_depr', formatCurrency(plDepr));
+            setVal('val_pl_other_exp', formatCurrency(plOthExp));
+            setVal('val_pl3_pbt_t', formatCurrency(pbt));
+            
+            // Debit Side total matched to Credit Side
+            setVal('val_pl_dr_tot', formatCurrency(totCredPL)); 
+
+            // Refund Bank Table
+            const refundBanks = [];
+            const searchBanks = (o) => {
+                if (!o || typeof o !== 'object') return;
+                for (let k in o) {
+                    if (k.toLowerCase() === 'addtnlbankdetails' && Array.isArray(o[k])) {
+                        refundBanks.push(...o[k]);
+                    }
+                    if (typeof o[k] === 'object') searchBanks(o[k]);
+                }
+            };
+            searchBanks(root);
+
+            const bankTable = document.getElementById('bank_table').getElementsByTagName('tbody')[0];
+            bankTable.innerHTML = '';
+            
+            if (refundBanks.length > 0) {
+                document.getElementById('sch_bank').classList.remove('zero-hide');
+                refundBanks.forEach(b => {
+                    let typeStr = "Savings";
+                    if(b.AccountType === "CA") typeStr = "Current";
+                    const isRefund = String(b.UseForRefund) === "true" ? "Yes" : "No";
+                    
+                    const row = bankTable.insertRow(-1);
+                    row.innerHTML = `
+                        <td>${b.BankName || '-'} - ${b.BankAccountNo || '-'}</td>
+                        <td>${b.IFSCCode || '-'}</td>
+                        <td>${typeStr}</td>
+                        <td>${isRefund}</td>
+                    `;
+                });
+            } else {
+                document.getElementById('sch_bank').classList.add('zero-hide');
+            }
+
+            // Trigger Display Toggle
+            updateComputationFormat();
+        }
+
+        function updateComputationFormat() {
+            const selectedItr = document.getElementById('itrSelector').value;
+            setVal('val_itr_code', `Form: ${selectedItr}`);
+            
+            const elements = document.querySelectorAll('.itr-dependent');
+            elements.forEach(el => {
+                const supportedItrs = el.getAttribute('data-itr').split(',');
+                if (supportedItrs.includes(selectedItr)) {
+                    if (el.tagName === 'TR') el.style.display = 'table-row';
+                    else if (el.classList.contains('minimal-row')) el.style.display = 'flex';
+                    else el.style.display = 'block';
+                } else {
+                    el.style.display = 'none';
+                }
+            });
+            applyZeroHide();
+        }
+
+        function applyZeroHide() {
+            // Hide individual schedule rows if 0
+            document.querySelectorAll('.hide-if-zero').forEach(el => {
+                if (el.classList.contains('minimal-row')) return; 
+                const valEl = el.querySelector('.num:not(th)');
+                if (valEl && (valEl.innerText.trim() === "0" || valEl.innerText.trim() === "-" || valEl.innerText.trim() === "0.00" || valEl.innerText.trim() === "₹0" || valEl.innerText.trim() === "%")) {
+                    el.classList.add('zero-hide');
+                } else {
+                    el.classList.remove('zero-hide');
+                }
+            });
+
+            // Hide Entire Empty Schedules
+            const scheduleMap = [
+                { id: 'sch_salary', target: 'val_sal_net_sched' },
+                { id: 'sch_hp', target: 'val_hp_net_sched' },
+                { id: 'sch_bp', target: 'val_bp_net_sched' },
+                { id: 'sch_pl3', target: 'val_pl_cr_tot' },
+                { id: 'sch_bs3', target: 'val_bs_tot_ast' },
+                { id: 'sch_bs4', target: 'val_bs4_tot_asset' },
+                { id: 'sch_cg', target: 'val_cg_net_sched' },
+                { id: 'sch_os', target: 'val_os_net_sched' },
+                { id: 'sch_via', target: 'val_deductions_sched' },
+                { id: 'sch_taxes', target: 'val_tot_taxes_paid' }
+            ];
+            
+            scheduleMap.forEach(map => {
+                const schedEl = document.getElementById(map.id);
+                const sumEl = document.getElementById(map.target);
+                if (schedEl && sumEl) {
+                    const val = sumEl.innerText.replace(/,/g, '').replace(/₹/g, '').replace(/%/g, '').trim();
+                    if (val === "0" || val === "-" || val === "0.00" || val === "") {
+                        schedEl.classList.add('zero-hide');
+                    } else {
+                        schedEl.classList.remove('zero-hide');
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

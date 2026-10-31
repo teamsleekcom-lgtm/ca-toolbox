@@ -2,10 +2,18 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://catoolbox.in/</loc>
-    <lastmod>2026-10-05</lastmod>
+    <lastmod>2026-11-01</lastmod>
   </url>
   <url>
     <loc>https://catoolbox.in/gstr2b/</loc>
     <lastmod>2026-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://catoolbox.in/esigner/</loc>
+    <lastmod>2026-11-01</lastmod>
+  </url>
+  <url>
+    <loc>https://catoolbox.in/computation/</loc>
+    <lastmod>2026-11-01</lastmod>
   </url>
 </urlset>

@@ -29,6 +29,8 @@ Some tools are hosted right here as part of the site, in addition to external li
 | URL | Tool | Source of truth |
 |-----|------|-----------------|
 | `/gstr2b/` | GSTR-2B Reconciliation Tool | `gstr2b-reconciler/` (separate repo) |
+| `/esigner/` | e-Signer (signing studio) | `esigner/index.html` (single-file tool, source lives here) |
+| `/computation/` | Computation of Income Generator | `computation/index.html` (single-file tool, source lives here) |
 
 After changing the reconciler's code, refresh the hosted copy:
 
@@ -54,6 +56,8 @@ CAToolbox/
 ├── data/
 │   └── tools.json          # The "database" of listed tools
 ├── gstr2b/                 # Hosted tool: GSTR-2B Reconciler (built copy — do not edit by hand)
+├── esigner/                # Hosted tool: e-Signer (single-file, edit index.html directly)
+├── computation/            # Hosted tool: Computation of Income (single-file, edit index.html directly)
 ├── update-gstr2b.sh        # Rebuilds ./gstr2b from the reconciler source
 ├── releases/               # Optional file storage for tool downloads
 ├── .github/
