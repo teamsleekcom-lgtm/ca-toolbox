@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GST PDF to Excel — GSTR-1 &amp; 3B Summary</title>
+<meta name="description" content="Turn a folder of monthly GSTR-1 or GSTR-3B PDFs from the GST portal into one clean Excel summary, with totals across the financial year. Runs entirely in your browser.">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="/toolbox.css">
+<script src="/toolbox.js" data-tool="GST PDF to Excel" defer></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+  :root {
+    --navy: #1B3A6B;
+    --navy-deep: #0F2647;
+    --blue: #1e5fa8;
+    --sky: #3b9ede;
+    --success: #1E8E5A;
+    --bg: #F4F6FA;
+    --card: #FFFFFF;
+    --border: #D7DEE8;
+    --text: #1A2233;
+    --subtext: #5C6B82;
+    --err: #C0392B;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(26,46,74,.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 20px 60px; }
+
+  /* Header */
+  header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-deep) 100%);
+    color: #fff; padding: 24px 32px; margin-bottom: 28px;
+    display: flex; align-items: center; gap: 16px;
+    box-shadow: 0 2px 20px rgba(0,0,0,.15);
+  }
+  .logo-icon {
+    width: 48px; height: 48px; border-radius: 12px; background: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
+  }
+  header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.3px; }
+  header p { color: #BFD3EE; font-size: 0.9rem; margin-top: 4px; }
+
+  /* Mode Switcher */
+  .mode-switch {
+    display: flex; background: #e3eaf5; border-radius: 8px; padding: 4px; margin-bottom: 20px; width: fit-content;
+  }
+  .mode-switch label {
+    padding: 10px 24px; font-weight: 600; font-size: 0.95rem; color: var(--subtext);
+    cursor: pointer; border-radius: 6px; transition: all 0.2s; user-select: none;
+  }
+  .mode-switch input { display: none; }
+  .mode-switch input:checked + label {
+    background: #fff; color: var(--navy); box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  /* Card */
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow);
+  }
+  .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .card-head h2 { font-size: 1.1rem; color: var(--navy); font-weight: 700; }
+  
+  /* Drop zone */
+  .drop {
+    border: 2px dashed var(--border); border-radius: var(--radius);
+    padding: 40px 20px; text-align: center; cursor: pointer;
+    transition: 0.2s; background: #FAFBFD;
+  }
+  .drop.drag { border-color: var(--sky); background: #eef6ff; }
+  .drop .icon { font-size: 2.5rem; margin-bottom: 8px; opacity: 0.8; }
+  .drop .ttl { font-size: 1.05rem; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
+  .drop .hint { font-size: 0.85rem; color: var(--subtext); }
+  input[type=file] { display: none; }
+  .browse-btn {
+    display: inline-block; margin-top: 14px; background: var(--blue); color: #fff;
+    border: none; padding: 10px 24px; border-radius: 8px; font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; transition: 0.15s;
+  }
+  .browse-btn:hover { background: var(--navy); }
+
+  /* File list */
+  .file-list { margin-top: 16px; }
+  .file-list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .file-list-header span { font-size: 0.9rem; font-weight: 600; color: var(--navy); }
+  .clear-all { font-size: 0.85rem; color: var(--subtext); cursor: pointer; background: none; border: none; font-weight: 600; }
+  .clear-all:hover { color: var(--err); }
+  .file-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; border-radius: 8px; font-size: 0.9rem;
+    border: 1px solid var(--border); margin-bottom: 8px; background: #f8fafc;
+  }
+  .file-row .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 10px; font-weight: 500; }
+  .file-row button { background: none; border: none; color: var(--subtext); cursor: pointer; font-size: 1.1rem; padding: 2px 6px; }
+  .file-row button:hover { color: var(--err); }
+  .empty-note { color: var(--subtext); font-size: 0.9rem; padding: 14px 0; text-align: center; }
+
+  /* Generate button */
+  .generate-btn {
+    width: 100%; padding: 16px; font-size: 1.05rem; font-weight: 700; color: #fff;
+    background: var(--success); border: none; border-radius: 10px; cursor: pointer;
+    transition: 0.2s; font-family: inherit; box-shadow: 0 4px 16px rgba(30, 142, 90, 0.2);
+  }
+  .generate-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(30, 142, 90, 0.3); }
+  .generate-btn:disabled { background: #9FB3C8; cursor: not-allowed; box-shadow: none; transform: none; }
+
+  /* Log */
+  .log-box {
+    background: #0F1B2D; color: #D8E2EF; font-family: Consolas, Menlo, monospace;
+    font-size: 0.85rem; border-radius: 10px; padding: 16px; height: 250px;
+    overflow-y: auto; white-space: pre-wrap; line-height: 1.6;
+  }
+  .log-box .ok { color: #4ADE80; }
+  .log-box .warn { color: #FBBF24; }
+  .log-box .err { color: #F87171; }
+  .log-box .info { color: #93A5BD; }
+  .log-box .bold { color: #fff; font-weight: 700; }
+
+  footer { text-align: center; color: var(--subtext); font-size: 0.85rem; padding: 20px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">📊</div>
+  <div>
+    <h1>GST PDF to Excel</h1>
+    <p>GSTR-1 &amp; GSTR-3B filed PDFs → one yearly Excel summary</p>
+  </div>
+</header>
+
+<div class="wrap">
+  
+  <div class="mode-switch">
+    <input type="radio" id="mode-gstr1" name="mode" value="GSTR-1" checked>
+    <label for="mode-gstr1">GSTR-1 (Outward supplies)</label>
+
+    <input type="radio" id="mode-gstr3b" name="mode" value="GSTR-3B">
+    <label for="mode-gstr3b">GSTR-3B (Liability &amp; ITC)</label>
+  </div>
+  <p style="font-size:.85rem;color:var(--subtext);margin:-8px 0 18px 2px">
+    Choose the return type you are collating
+    <i class="tb-i" data-help="GSTR-1 = outward supplies (sales) filed every month or quarter. GSTR-3B = the monthly summary return covering liability, ITC and tax paid. Pick whichever set of PDFs you are about to upload — the two cannot be mixed in one run.">i</i>
+  </p>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>1. Add PDF Files <i class="tb-i" data-help="Download each month's return PDF from the GST portal (Returns Dashboard → select period → Download filed return), then drop all twelve here. Digital portal PDFs only — scanned or photographed copies have no text layer and cannot be read.">i</i></h2>
+    </div>
+    <div class="drop" id="dropZone">
+      <div class="icon">📂</div>
+      <div class="ttl" id="dropTitle">Drag &amp; drop GSTR-1 PDFs here</div>
+      <div class="hint">Multiple files supported. Digital portal PDFs only.</div>
+      <input type="file" id="fileInput" accept=".pdf" multiple>
+      <div><button class="browse-btn" id="browseBtn" type="button">Browse Files</button></div>
+    </div>
+
+    <div class="file-list">
+      <div class="file-list-header">
+        <span id="fileCountLabel">Selected Files</span>
+        <button class="clear-all" id="clearAllBtn">Clear All</button>
+      </div>
+      <div id="fileListBody">
+        <div class="empty-note">No files selected yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>2. Process Data <i class="tb-i" data-help="One PDF per month. Months are detected from the tax period printed on each return, so files can be added in any order and a missing month simply stays blank. The Excel downloads automatically when processing finishes.">i</i></h2>
+    </div>
+    <button class="generate-btn" id="generateBtn" disabled>⚡ Generate Excel Report</button>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>Processing Log</h2>
+    </div>
+    <div class="log-box" id="logBox">Ready. Select mode and add files to begin…</div>
+  </div>
+
+  <footer>
+    Runs entirely in the browser. Financial data is never uploaded to any server.
+  </footer>
+
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// --- SHARED UTILS ---
+const FY_MONTHS = ["APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER","JANUARY","FEBRUARY","MARCH"];
+const MONTH_MAP = {
+  january:'JANUARY', february:'FEBRUARY', march:'MARCH', april:'APRIL', may:'MAY', june:'JUNE', 
+  july:'JULY', august:'AUGUST', september:'SEPTEMBER', october:'OCTOBER', november:'NOVEMBER', december:'DECEMBER',
+  jan:'JANUARY', feb:'FEBRUARY', mar:'MARCH', apr:'APRIL', jun:'JUNE', jul:'JULY', aug:'AUGUST', 
+  sep:'SEPTEMBER', oct:'OCTOBER', nov:'NOVEMBER', dec:'DECEMBER'
+};
+const MONTH_NUM = {"01":"JANUARY","02":"FEBRUARY","03":"MARCH","04":"APRIL","05":"MAY","06":"JUNE",
+                   "07":"JULY","08":"AUGUST","09":"SEPTEMBER","10":"OCTOBER","11":"NOVEMBER","12":"DECEMBER"};
+
+function round2(n) { return Math.round(n * 100) / 100; }
+function toFloat(s) { const v = parseFloat(String(s).replace(/,/g, "")); return isNaN(v) ? 0.0 : v; }
+
+function detectMonth(text) {
+    let m = text.match(/Period\s+(\w+)/i);
+    if(m) {
+        const t = m[1].toLowerCase();
+        if(MONTH_MAP[t]) return MONTH_MAP[t];
+    }
+    m = text.match(/\b(0[1-9]|1[0-2])[\/\-]?20\d{2}\b/);
+    if(m) return MONTH_NUM[m[1]];
+    for(const [k, v] of Object.entries(MONTH_MAP)) {
+        if(new RegExp("\\b" + k + "\\b", "i").test(text)) return v;
+    }
+    return "UNKNOWN";
+}
+
+function totalsRow(rows, cols){
+    const t = {MONTH:"TOTAL"};
+    for(const c of cols) t[c] = round2(rows.reduce((s,r)=>s+(r[c]||0),0));
+    return t;
+}
+
+// --- GSTR-1 ENGINE ---
+async function extractGSTR1(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let month = null, taxable = null, igst = null, cgst = null, sgst = null;
+    const TARGET = 'total liability (outward supplies other than reverse charge)';
+
+    for (let p = 1; p <= pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
+        const content = await page.getTextContent();
+        
+        const items = content.items.filter(i => i.str.trim()).sort((a,b) => {
+            const dy = Math.round(b.transform[5]) - Math.round(a.transform[5]);
+            return dy !== 0 ? dy : a.transform[4] - b.transform[4];
+        });
+
+        const lines = [];
+        let currentLine = [], currentY = null;
+        for (const item of items) {
+            const y = Math.round(item.transform[5]);
+            if (currentY === null || Math.abs(y - currentY) <= 3) {
+                currentLine.push(item.str); currentY = y;
+            } else {
+                if (currentLine.length) lines.push(currentLine.join(' '));
+                currentLine = [item.str]; currentY = y;
+            }
+        }
+        if (currentLine.length) lines.push(currentLine.join(' '));
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const ll = line.toLowerCase();
+
+            if (!month && ll.includes('tax period')) {
+                month = detectMonth([line, lines[i+1]||'', lines[i+2]||''].join(' '));
+            }
+
+            if (taxable === null && ll.includes(TARGET)) {
+                const combined = [line, lines[i+1]||'', lines[i+2]||''].join(' ');
+                const nums = combined.match(/-\s*[\d,]+\.\d{2}|[\d,]+\.\d{2}/g) || [];
+                const vals = nums.map(t => {
+                    const str = t.trim();
+                    const n = parseFloat(str.replace(/,/g,'').replace(/\s/g,'').replace(/-/g,''));
+                    return str.startsWith('-') ? -n : (isNaN(n) ? null : n);
+                }).filter(v => v !== null);
+
+                if (vals.length >= 4) { [taxable,igst,cgst,sgst] = vals; }
+                else if (vals.length === 3) { [taxable,igst,cgst] = vals; sgst = 0; }
+                else if (vals.length === 2) { [taxable,igst] = vals; cgst = sgst = 0; }
+                else if (vals.length === 1) { taxable = vals[0]; igst = cgst = sgst = 0; }
+            }
+        }
+        if (month !== 'UNKNOWN' && taxable !== null) break;
+    }
+    
+    if (month === 'UNKNOWN' || !month) throw new Error("Could not detect tax period.");
+    if (taxable === null) throw new Error("Total Liability row not found.");
+    
+    return { Month: month, TV: taxable, IGST: igst||0, CGST: cgst||0, SGST: sgst||0 };
+}
+
+// --- GSTR-3B ENGINE ---
+const ALL_KEYS_3B = ["a","b","c","d","itc_a1","itc_a2","itc_a3","itc_a4","itc_c","interest","late_fee"];
+const ROW_PATTERNS = {
+    a:        /\(a\)/i, b: /\(b\)/i, c: /\(c\s*[\).]/i, d: /\(d\)/i,
+    itc_a1:   /\(1\)\s*import of goods/i, itc_a2: /\(2\)\s*import of services/i,
+    itc_a3:   /\(3\).*inward supplies liable to reverse charge/i,
+    itc_a4:   /\(4\)\s*inward supplies from isd/i,
+    itc_c:    /c\.\s*net itc available/i, interest: /interest paid/i, late_fee: /late fee/i,
+};
+const ZERO4 = [0,0,0,0];
+
+function groupRows(words, tol=3){
+    const bands = [];
+    for(const w of words){
+        let band = bands.find(b => Math.abs(b.y - w.top) <= tol);
+        if(!band){ band = {y: w.top, words:[]}; bands.push(band); }
+        band.words.push(w);
+    }
+    bands.forEach(b => b.words.sort((a,b2)=>a.x0-b2.x0));
+    bands.sort((a,b)=>a.y-b.y);
+    return bands;
+}
+
+async function extractGSTR3B(file){
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+    let allWords = [], fullText = "";
+
+    for(let pNum = 1; pNum <= pdf.numPages; pNum++){
+        const page = await pdf.getPage(pNum);
+        const viewport = page.getViewport({scale: 1});
+        const content = await page.getTextContent();
+        for(const item of content.items){
+            if(!item.str || !item.str.trim()) continue;
+            const top = (viewport.height - item.transform[5]) + pNum * 10000;
+            allWords.push({text: item.str, x0: item.transform[4], top: top});
+            fullText += item.str + " ";
+        }
+    }
+
+    const result = { Month: detectMonth(fullText) };
+    if(result.Month === "UNKNOWN") throw new Error("Could not detect tax period.");
+    
+    for(const k of ALL_KEYS_3B) result[k] = null;
+    const numRe = /-?\d[\d,]*\.\d{2}/g;
+    
+    for(const band of groupRows(allWords)){
+        const txt = band.words.map(w=>w.text).join(" ");
+        const matches = txt.match(numRe);
+        if(!matches) continue;
+        let nums = matches.map(toFloat);
+        while(nums.length < 4) nums.push(0.0);
+
+        for(const key of ALL_KEYS_3B){
+            if(result[key] !== null) continue;
+            if(ROW_PATTERNS[key].test(txt)) result[key] = nums.slice(0,4);
+        }
+    }
+    return result;
+}
+
+function merge3B(master, data){
+    const m = data.Month;
+    if(!master[m]){ master[m] = {}; for(const k of ALL_KEYS_3B) master[m][k] = data[k] || ZERO4.slice(); }
+    else { for(const k of ALL_KEYS_3B){ const a = master[m][k] || ZERO4, b = data[k] || ZERO4; master[m][k] = [a[0]+b[0], a[1]+b[1], a[2]+b[2], a[3]+b[3]]; } }
+}
+
+// --- EXCEL GENERATION (EXCELJS) ---
+const STYLE = { NAVY: "FF1B3A6B", MIDBLUE: "FF2E5FA3", TOTAL_FILL: "FFD6E4F0", NUM_FMT: '#,##0.00;[Red]-#,##0.00;"-"' };
+
+function formatCell(cell, {bold, color, fill, align, border=true, numFmt}={}){
+    cell.font = {bold: !!bold, color: {argb: color || "FF1A2233"}, size:10, name:"Calibri"};
+    if(fill) cell.fill = {type:"pattern", pattern:"solid", fgColor:{argb:fill}};
+    cell.alignment = {horizontal: align || "left", vertical:"middle"};
+    if(border){ const thin = {style:"thin", color:{argb:"FFBBBBBB"}}; cell.border = {top:thin, left:thin, bottom:thin, right:thin}; }
+    if(numFmt) cell.numFmt = STYLE.NUM_FMT;
+}
+
+function writeBlock3B(ws, startRow, startCol, title, colHeaders, rows, dataKeys, titleSpan){
+    if(titleSpan > 1) ws.mergeCells(startRow, startCol, startRow, startCol+titleSpan-1);
+    const tc = ws.getCell(startRow, startCol); tc.value = title; tc.font = {bold:true, size:11, color:{argb:STYLE.NAVY}, name:"Calibri"};
+    const hr = startRow + 1; const mh = ws.getCell(hr, startCol); mh.value = "MONTH"; formatCell(mh, {bold:true, color:"FFFFFFFF", fill:STYLE.NAVY, align:"center"});
+    colHeaders.forEach((h,i)=>{ const c = ws.getCell(hr, startCol+1+i); c.value = h; formatCell(c, {bold:true, color:"FFFFFFFF", fill:STYLE.NAVY, align:"center"}); });
+    rows.forEach((row,ri)=>{
+        const er = hr+1+ri; const isT = row.MONTH === "TOTAL"; const mc = ws.getCell(er, startCol); mc.value = row.MONTH; formatCell(mc, {bold:isT, fill:isT?STYLE.TOTAL_FILL:null, align:"center"});
+        dataKeys.forEach((k,i)=>{ const c = ws.getCell(er, startCol+1+i); c.value = row[k]; formatCell(c, {bold:isT, fill:isT?STYLE.TOTAL_FILL:null, align:"right", numFmt:true}); });
+    });
+    return hr + 1 + rows.length;
+}
+
+function writeInterestBlock(ws, startRow, startCol, master, activeMonths){
+    const dInLf = activeMonths.map(mo=>{
+        const m = master[mo] || {}; const intr = m.interest || ZERO4, lf = m.late_fee || ZERO4;
+        return {MONTH:mo, I_IGST:round2(intr[0]), I_CGST:round2(intr[1]), I_SGST:round2(intr[2]), I_TOTAL:round2(round2(intr[0])+round2(intr[1])+round2(intr[2])), L_CGST:round2(lf[0]), L_SGST:round2(lf[1]), L_TOTAL:round2(round2(lf[0])+round2(lf[1]))};
+    }); dInLf.push(totalsRow(dInLf, ["I_IGST","I_CGST","I_SGST","I_TOTAL","L_CGST","L_SGST","L_TOTAL"]));
+    ws.mergeCells(startRow, startCol, startRow, startCol+7); ws.getCell(startRow, startCol).value = "Interest and Late Fees Paid — Table 5.1"; ws.getCell(startRow, startCol).font = {bold:true, size:11, color:{argb:STYLE.NAVY}, name:"Calibri"};
+    formatCell(ws.getCell(startRow+1, startCol), {fill:STYLE.NAVY}); ws.mergeCells(startRow+1, startCol+1, startRow+1, startCol+4); ws.getCell(startRow+1, startCol+1).value = "Interest Paid (5.1)"; formatCell(ws.getCell(startRow+1, startCol+1), {bold:true, color:"FFFFFFFF", fill:STYLE.MIDBLUE, align:"center"});
+    ws.mergeCells(startRow+1, startCol+5, startRow+1, startCol+7); ws.getCell(startRow+1, startCol+5).value = "Late Fee (5.1)"; formatCell(ws.getCell(startRow+1, startCol+5), {bold:true, color:"FFFFFFFF", fill:STYLE.MIDBLUE, align:"center"});
+    ["MONTH","IGST","CGST","SGST","Total","CGST","SGST","Total"].forEach((h,i)=>{ const c = ws.getCell(startRow+2, startCol+i); c.value = h; formatCell(c, {bold:true, color:"FFFFFFFF", fill:STYLE.NAVY, align:"center"}); });
+    dInLf.forEach((row,ri)=>{
+        const er = startRow+3+ri; const isT = row.MONTH === "TOTAL"; const mc = ws.getCell(er, startCol); mc.value = row.MONTH; formatCell(mc, {bold:isT, fill:isT?STYLE.TOTAL_FILL:null, align:"center"});
+        ["I_IGST","I_CGST","I_SGST","I_TOTAL","L_CGST","L_SGST","L_TOTAL"].forEach((k,i)=>{ const c = ws.getCell(er, startCol+1+i); c.value = row[k]; formatCell(c, {bold:isT, fill:isT?STYLE.TOTAL_FILL:null, align:"right", numFmt:true}); });
+    });
+    return startRow + 3 + dInLf.length;
+}
+
+async function buildWorkbook1(master, activeMonths) {
+    const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet("GSTR-1 Summary"); ws.mergeCells(1, 1, 1, 5); ws.getCell(1,1).value = "GSTR-1 – Total Liability (Outward Supplies other than Reverse Charge)"; ws.getCell(1,1).font = {bold:true, size:12, color:{argb:STYLE.NAVY}, name:"Calibri"};
+    ['Month', 'Taxable Value', 'IGST', 'CGST', 'SGST'].forEach((h, i) => { const c = ws.getCell(2, i+1); c.value = h; formatCell(c, {bold:true, color:"FFFFFFFF", fill:STYLE.NAVY, align:"center"}); });
+    const rows = activeMonths.map(m => master[m]); rows.push(totalsRow(rows, ["TV", "IGST", "CGST", "SGST"]));
+    rows.forEach((row, ri) => {
+        const rNum = 3 + ri; const isT = row.MONTH === "TOTAL"; ws.getCell(rNum, 1).value = row.Month || row.MONTH; formatCell(ws.getCell(rNum, 1), {bold:isT, fill:isT?STYLE.TOTAL_FILL:null, align:"center"});
+        ['TV', 'IGST', 'CGST', 'SGST'].forEach((k, i) => { const c = ws.getCell(rNum, i+2); c.value = row[k]; formatCell(c, {bold:isT, fill:isT?STYLE.TOTAL_FILL:null, align:"right", numFmt:true}); });
+    });
+    ws.columns = [{width: 14}, {width: 20}, {width: 18}, {width: 18}, {width: 18}]; return wb;
+}
+
+async function buildWorkbook3B(master, activeMonths) {
+    const dOut = activeMonths.map(mo=>{ const m = master[mo], a=m.a||ZERO4, b=m.b||ZERO4, c=m.c||ZERO4; return {MONTH:mo, TV:round2(a[0]+b[0]+c[0]), IGST:round2(a[1]+b[1]+c[1]), CGST:round2(a[2]+b[2]+c[2]), SGST:round2(a[3]+b[3]+c[3])}; }); dOut.push(totalsRow(dOut, ["TV","IGST","CGST","SGST"]));
+    const dZR = activeMonths.map(mo=>{ const m = master[mo], b=m.b||ZERO4, c=m.c||ZERO4; return {MONTH:mo, Export:round2(b[0]), "Zero Rated":round2(c[0])}; }); dZR.push(totalsRow(dZR, ["Export","Zero Rated"]));
+    const dITC = activeMonths.map(mo=>{ const m = master[mo], c=m.itc_c||ZERO4, a3=m.itc_a3||ZERO4; return {MONTH:mo, IGST:round2(c[0]-a3[0]), CGST:round2(c[1]-a3[1]), SGST:round2(c[2]-a3[2])}; }); dITC.push(totalsRow(dITC, ["IGST","CGST","SGST"]));
+    const dRCM = activeMonths.map(mo=>{ const v = master[mo].d||ZERO4; return {MONTH:mo, TV:round2(v[0]), IGST:round2(v[1]), CGST:round2(v[2]), SGST:round2(v[3])}; }); dRCM.push(totalsRow(dRCM, ["TV","IGST","CGST","SGST"]));
+    const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet("GSTR-3B Summary");
+    writeBlock3B(ws, 1, 1, "Outward Supplies — 3.1 (a)+(b)+(c)", ["TV","IGST","CGST","SGST"], dOut, ["TV","IGST","CGST","SGST"], 5); writeBlock3B(ws, 1, 7, "Outward Supplies - 3.1 C & 3.1 B", ["Export","Zero Rated"], dZR, ["Export","Zero Rated"], 3);
+    const R2 = 1 + 1 + dOut.length + 2; writeBlock3B(ws, R2, 1, "Net ITC Available — Table 4 (C minus A3)", ["IGST","CGST","SGST"], dITC, ["IGST","CGST","SGST"], 4); writeBlock3B(ws, R2, 6, "RCM Inward Supplies — Table 3.1 (d)", ["TV","IGST","CGST","SGST"], dRCM, ["TV","IGST","CGST","SGST"], 5);
+    writeInterestBlock(ws, R2 + 1 + dITC.length + 2, 1, master, activeMonths);
+    ws.columns = [{width:16},{width:14},{width:14},{width:14},{width:14}, {width:16}, {width:16},{width:14},{width:14},{width:14}]; return wb;
+}
+
+// --- UI WIRING ---
+let pdfFiles = []; const dropZone = document.getElementById('dropZone'); const fileInput = document.getElementById('fileInput'); const fileListBody = document.getElementById('fileListBody'); const generateBtn = document.getElementById('generateBtn'); const logBox = document.getElementById('logBox');
+function getMode() { return document.querySelector('input[name="mode"]:checked').value; }
+document.querySelectorAll('input[name="mode"]').forEach(r => { r.addEventListener('change', () => { const mode = getMode(); document.getElementById('dropTitle').textContent = `Drag & drop ${mode} PDFs here`; pdfFiles = []; refreshFileList(); clearLog(); log(`Switched to ${mode} mode. Ready for files.`, 'info'); }); });
+function log(msg, cls){ const span = document.createElement('div'); if(cls) span.className = cls; span.innerHTML = msg; logBox.appendChild(span); logBox.scrollTop = logBox.scrollHeight; }
+function clearLog(){ logBox.innerHTML = ""; }
+function refreshFileList(){ fileListBody.innerHTML = ""; if(!pdfFiles.length){ fileListBody.innerHTML = '<div class="empty-note">No files selected yet.</div>'; generateBtn.disabled = true; document.getElementById('fileCountLabel').textContent = "Selected Files"; return; } document.getElementById('fileCountLabel').textContent = `Selected Files (${pdfFiles.length})`; pdfFiles.forEach((item, idx)=>{ const row = document.createElement('div'); row.className = 'file-row'; row.innerHTML = `<span class="fname">${item.file.name}</span><button onclick="removeFile(${idx})">✕</button>`; fileListBody.appendChild(row); }); generateBtn.disabled = false; }
+window.removeFile = (idx) => { pdfFiles.splice(idx, 1); refreshFileList(); };
+function addFiles(filesArray){ let count = 0; filesArray.forEach(f => { if((f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf")) && !pdfFiles.some(p => p.file.name === f.name)) { pdfFiles.push({file: f}); count++; } }); if(count) refreshFileList(); }
+document.getElementById('browseBtn').onclick = () => fileInput.click(); dropZone.onclick = (e) => { if(e.target.tagName !== 'BUTTON') fileInput.click(); }; fileInput.onchange = (e) => { addFiles(Array.from(e.target.files)); fileInput.value = ""; };
+['dragenter','dragover'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); dropZone.classList.add('drag'); })); ['dragleave','drop'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); dropZone.classList.remove('drag'); })); dropZone.ondrop = (e) => { addFiles(Array.from(e.dataTransfer.files)); }; document.getElementById('clearAllBtn').onclick = () => { pdfFiles = []; refreshFileList(); };
+
+generateBtn.onclick = async () => {
+    const mode = getMode(); generateBtn.disabled = true; generateBtn.textContent = "Processing…"; clearLog(); log(`Initializing ${mode} processing for ${pdfFiles.length} file(s)…`, 'bold');
+    const master = {}; let errors = 0;
+    for (const item of pdfFiles) {
+        const fname = item.file.name;
+        try {
+            if (mode === "GSTR-1") { const data = await extractGSTR1(item.file); master[data.Month] = data; log(`  ✅ ${fname} → <b>${data.Month.padEnd(10)}</b> | TV: ${data.TV.toLocaleString('en-IN')}`, 'ok'); } 
+            else { const data = await extractGSTR3B(item.file); merge3B(master, data); const outTV = round2((data.a||ZERO4)[0] + (data.b||ZERO4)[0] + (data.c||ZERO4)[0]); log(`  ✅ ${fname} → <b>${data.Month.padEnd(10)}</b> | Outward TV: ${outTV.toLocaleString('en-IN')}`, 'ok'); }
+        } catch(err) { log(`  ❌ ${fname} — ${err.message}`, 'err'); errors++; }
+    }
+    const activeMonths = FY_MONTHS.filter(m => master[m]);
+    if (!activeMonths.length) { log("No valid data extracted from any file.", 'err'); } 
+    else { log(`\nBuilding Excel workbook (${mode})…`, 'info'); try { const wb = mode === "GSTR-1" ? await buildWorkbook1(master, activeMonths) : await buildWorkbook3B(master, activeMonths); const buffer = await wb.xlsx.writeBuffer(); const blob = new Blob([buffer], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `${mode.replace('-','')} _Summary_${activeMonths.map(m=>m.slice(0,3)).join("-")}.xlsx`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); log(`📊 Success! Report downloaded. Included months: ${activeMonths.join(", ")}`, 'bold'); if(errors) log(`⚠ Note: ${errors} file(s) were skipped due to errors.`, 'warn'); } catch(err) { log(`❌ Failed to build Excel: ${err.message}`, 'err'); } }
+    generateBtn.disabled = false; generateBtn.textContent = "⚡ Generate Excel Report";
+};
+</script>
+</body>
+</html>

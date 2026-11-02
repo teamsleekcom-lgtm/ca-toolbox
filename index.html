@@ -163,76 +163,23 @@
         ];
 
         /* ============================================================
-           Card colour palette — add a colour here and reference it
-           from tools.json ("color": "emerald") to use it.
+           Card accent colours — one per tool. Hex values are the
+           Tailwind 600 (accent), 700 (text) and 50 (tint) shades,
+           applied as inline styles so any colour in tools.json works.
            ============================================================ */
         const PALETTES = {
-            blue: {
-                grad: 'from-blue-600 to-indigo-600',
-                pill: 'bg-blue-50 text-blue-700 border-blue-100',
-                btn: 'bg-blue-600 hover:bg-blue-700',
-                ring: 'hover:border-blue-300'
-            },
-            emerald: {
-                grad: 'from-emerald-500 to-teal-600',
-                pill: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-                btn: 'bg-emerald-600 hover:bg-emerald-700',
-                ring: 'hover:border-emerald-300'
-            },
-            violet: {
-                grad: 'from-violet-600 to-purple-600',
-                pill: 'bg-violet-50 text-violet-700 border-violet-100',
-                btn: 'bg-violet-600 hover:bg-violet-700',
-                ring: 'hover:border-violet-300'
-            },
-            amber: {
-                grad: 'from-amber-500 to-orange-600',
-                pill: 'bg-amber-50 text-amber-700 border-amber-100',
-                btn: 'bg-amber-600 hover:bg-amber-700',
-                ring: 'hover:border-amber-300'
-            },
-            rose: {
-                grad: 'from-rose-500 to-pink-600',
-                pill: 'bg-rose-50 text-rose-700 border-rose-100',
-                btn: 'bg-rose-600 hover:bg-rose-700',
-                ring: 'hover:border-rose-300'
-            },
-            cyan: {
-                grad: 'from-cyan-500 to-sky-600',
-                pill: 'bg-cyan-50 text-cyan-700 border-cyan-100',
-                btn: 'bg-cyan-600 hover:bg-cyan-700',
-                ring: 'hover:border-cyan-300'
-            },
-            indigo: {
-                grad: 'from-indigo-600 to-blue-700',
-                pill: 'bg-indigo-50 text-indigo-700 border-indigo-100',
-                btn: 'bg-indigo-600 hover:bg-indigo-700',
-                ring: 'hover:border-indigo-300'
-            },
-            teal: {
-                grad: 'from-teal-500 to-emerald-600',
-                pill: 'bg-teal-50 text-teal-700 border-teal-100',
-                btn: 'bg-teal-600 hover:bg-teal-700',
-                ring: 'hover:border-teal-300'
-            },
-            fuchsia: {
-                grad: 'from-fuchsia-600 to-pink-600',
-                pill: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100',
-                btn: 'bg-fuchsia-600 hover:bg-fuchsia-700',
-                ring: 'hover:border-fuchsia-300'
-            },
-            sky: {
-                grad: 'from-sky-500 to-cyan-600',
-                pill: 'bg-sky-50 text-sky-700 border-sky-100',
-                btn: 'bg-sky-600 hover:bg-sky-700',
-                ring: 'hover:border-sky-300'
-            },
-            orange: {
-                grad: 'from-orange-500 to-amber-600',
-                pill: 'bg-orange-50 text-orange-700 border-orange-100',
-                btn: 'bg-orange-600 hover:bg-orange-700',
-                ring: 'hover:border-orange-300'
-            }
+            blue:    { accent: '#2563eb', text: '#1d4ed8', tint: '#eff6ff' },
+            emerald: { accent: '#059669', text: '#047857', tint: '#ecfdf5' },
+            violet:  { accent: '#7c3aed', text: '#6d28d9', tint: '#f5f3ff' },
+            amber:   { accent: '#d97706', text: '#b45309', tint: '#fffbeb' },
+            rose:    { accent: '#e11d48', text: '#be123c', tint: '#fff1f2' },
+            cyan:    { accent: '#0891b2', text: '#0e7490', tint: '#ecfeff' },
+            indigo:  { accent: '#4f46e5', text: '#4338ca', tint: '#eef2ff' },
+            teal:    { accent: '#0d9488', text: '#0f766e', tint: '#f0fdfa' },
+            fuchsia: { accent: '#c026d3', text: '#a21caf', tint: '#fdf4ff' },
+            sky:     { accent: '#0284c7', text: '#0369a1', tint: '#f0f9ff' },
+            orange:  { accent: '#ea580c', text: '#c2410c', tint: '#fff7ed' },
+            slate:   { accent: '#475569', text: '#334155', tint: '#f8fafc' }
         };
         const FALLBACK_ORDER = ['blue', 'emerald', 'violet', 'amber', 'rose', 'cyan'];
 
@@ -309,33 +256,38 @@
 
                 const name = escapeHtml(tool.name);
                 const description = escapeHtml(tool.description);
-                const icon = escapeHtml(tool.icon || '🛠️');
-                const linkLabel = escapeHtml(tool.linkLabel || 'Open Tool');
+                const linkLabel = escapeHtml(tool.linkLabel || 'Open tool');
                 const linkUrl = safeUrl(tool.downloadUrl);
 
                 // Colour: explicit from data, else rotate through the palette
                 const paletteKey = (tool.color && PALETTES[tool.color]) ? tool.color : FALLBACK_ORDER[index % FALLBACK_ORDER.length];
-                const colors = PALETTES[paletteKey];
-                const categoryPill = tool.category
-                    ? `<span class="text-xs font-semibold ${colors.pill} border rounded-full px-3 py-1 whitespace-nowrap">${escapeHtml(tool.category)}</span>`
+                const c = PALETTES[paletteKey];
+                const rowIndex = String(index + 1).padStart(2, '0');
+
+                const category = tool.category
+                    ? `<span class="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.13em] text-gray-400">
+                           <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background:${c.accent}"></span>${escapeHtml(tool.category)}
+                       </span>`
                     : '';
 
                 const card = document.createElement('article');
-                card.className = `group relative bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col animate-fade-in-up ${colors.ring}`;
+                card.className = 'group bg-white border border-gray-200 border-l-[3px] rounded-lg flex flex-col animate-fade-in-up hover:border-gray-300 transition-colors duration-200';
                 card.style.animationDelay = `${delay}ms`;
+                card.style.borderLeftColor = c.accent;
                 card.innerHTML = `
-                    <div class="h-1.5 bg-gradient-to-r ${colors.grad}" aria-hidden="true"></div>
-                    <div class="p-6 flex flex-col flex-1">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${colors.grad} flex items-center justify-center text-2xl shadow-sm select-none" aria-hidden="true">${icon}</div>
-                            ${categoryPill}
+                    <div class="px-6 py-5 flex flex-col flex-1">
+                        <div class="flex items-center justify-between gap-3 mb-4">
+                            <span class="font-mono text-[11px] tracking-[0.18em]" style="color:${c.text}">${rowIndex}</span>
+                            ${category}
                         </div>
-                        <h3 class="font-bold text-lg text-gray-900 mb-2">${name}</h3>
-                        <p class="text-sm text-gray-600 leading-relaxed mb-5 flex-1 line-clamp-4">${description}</p>
-                        <div class="flex items-center justify-end pt-4 border-t border-gray-100">
-                            <a href="${linkUrl}" target="_blank" rel="noopener noreferrer"
-                                class="${colors.btn} text-white text-sm font-medium px-4 py-2 rounded-lg transition-all duration-200 transform group-hover:-translate-y-0.5 whitespace-nowrap">${linkLabel}</a>
-                        </div>
+                        <h3 class="text-[17px] font-semibold text-gray-900 leading-snug mb-2 tracking-[-0.01em]">${name}</h3>
+                        <p class="text-[13.5px] text-gray-500 leading-relaxed line-clamp-3 mb-6 flex-1">${description}</p>
+                        <a href="${linkUrl}" target="_blank" rel="noopener noreferrer"
+                            class="inline-flex items-center gap-1.5 self-start text-[13px] font-semibold"
+                            style="color:${c.text}">
+                            ${linkLabel}
+                            <span class="transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden="true">→</span>
+                        </a>
                     </div>
                 `;
                 grid.appendChild(card);

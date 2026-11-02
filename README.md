@@ -38,6 +38,7 @@ Some tools are hosted right here as part of the site, in addition to external li
 | `/fixed-assets/` | Fixed Asset Manager | `fixed-assets/index.html` (single-file tool, source lives here) |
 | `/gstr1-recon/` | GSTR-1 ↔ Tally Recon | `gstr1-recon/index.html` (single-file tool, source lives here) |
 | `/tds-extractor/` | TDS Extractor | `tds-extractor/index.html` (single-file tool, source lives here) |
+| `/gst-pdf-to-excel/` | GST PDF to Excel | `gst-pdf-to-excel/index.html` (single-file tool, source lives here) |
 
 ## 🎨 Shared tool chrome (standard UI)
 
@@ -85,6 +86,7 @@ CAToolbox/
 ├── fixed-assets/           # Hosted tool: Fixed Asset Manager (single-file, edit index.html directly)
 ├── gstr1-recon/            # Hosted tool: GSTR-1 ↔ Tally Recon (single-file, edit index.html directly)
 ├── tds-extractor/          # Hosted tool: TDS Extractor (single-file, edit index.html directly)
+├── gst-pdf-to-excel/       # Hosted tool: GST PDF to Excel (single-file, edit index.html directly)
 ├── toolbox.css / toolbox.js  # Shared chrome for all hosted tools
 ├── update-gstr2b.sh        # Rebuilds ./gstr2b from the reconciler source
 ├── releases/               # Optional file storage for tool downloads
