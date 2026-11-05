@@ -262,13 +262,6 @@
                 // Colour: explicit from data, else rotate through the palette
                 const paletteKey = (tool.color && PALETTES[tool.color]) ? tool.color : FALLBACK_ORDER[index % FALLBACK_ORDER.length];
                 const c = PALETTES[paletteKey];
-                const rowIndex = String(index + 1).padStart(2, '0');
-
-                const category = tool.category
-                    ? `<span class="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.13em] text-gray-400">
-                           <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background:${c.accent}"></span>${escapeHtml(tool.category)}
-                       </span>`
-                    : '';
 
                 const card = document.createElement('article');
                 card.className = 'group bg-white border border-gray-200 border-l-[3px] rounded-lg flex flex-col animate-fade-in-up hover:border-gray-300 transition-colors duration-200';
@@ -276,10 +269,6 @@
                 card.style.borderLeftColor = c.accent;
                 card.innerHTML = `
                     <div class="px-6 py-5 flex flex-col flex-1">
-                        <div class="flex items-center justify-between gap-3 mb-4">
-                            <span class="font-mono text-[11px] tracking-[0.18em]" style="color:${c.text}">${rowIndex}</span>
-                            ${category}
-                        </div>
                         <h3 class="text-[17px] font-semibold text-gray-900 leading-snug mb-2 tracking-[-0.01em]">${name}</h3>
                         <p class="text-[13.5px] text-gray-500 leading-relaxed line-clamp-3 mb-6 flex-1">${description}</p>
                         <a href="${linkUrl}" target="_blank" rel="noopener noreferrer"

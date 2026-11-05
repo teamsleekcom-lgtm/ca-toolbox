@@ -127,9 +127,9 @@ gh release create v1.0 path/to/your-tool.xlsx \
 | `creator` | Optional | Person or firm name (kept on record — not shown on cards) |
 | `downloadUrl` | ✅ | Where the tool lives (https:// links) |
 | `description` | ✅ | One or two lines |
-| `category` | Optional | Shown as a badge (e.g. Audit, GST) |
-| `icon` | Optional | Emoji shown on the card (e.g. 🧾) |
-| `color` | Optional | Card colour: blue, emerald, violet, amber, rose or cyan (rotates automatically if omitted) |
+| `category` | Optional | Kept on record — not shown on cards |
+| `icon` | Optional | Kept on record — not shown on cards |
+| `color` | Optional | Card accent colour: blue, emerald, violet, amber, rose, cyan, indigo, teal, fuchsia, sky, orange or slate (rotates automatically if omitted) |
 | `linkLabel` | Optional | Button text; defaults to "Open Tool" |
 | `creatorUrl` | Optional | Creator link (kept on record — not shown on cards) |
 | `addedAt` / `lastUpdated` | Optional | ISO timestamps |

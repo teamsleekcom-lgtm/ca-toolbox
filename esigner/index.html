@@ -64,6 +64,24 @@ svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.6;fill:none}
 .th i{position:absolute;top:1px;right:5px;color:#b3261e;font-style:normal;font-weight:700}
 .mut{color:var(--mut);font-size:12px;margin:0}
 .grid.w{grid-template-columns:1fr}.grid.w .th{height:56px}.th.on{outline:2px solid var(--acc)}
+/* ---------- menubar ---------- */
+#menubar{display:flex;align-items:center;gap:1px}
+.menu{position:relative}
+.menu>button{height:32px;padding:0 11px;border-color:transparent;font-weight:500;color:var(--ink)}
+.menu>button:hover,.menu.open>button{background:var(--accbg)}
+.dropdown{display:none;position:absolute;top:calc(100% + 5px);left:0;min-width:216px;background:var(--bar);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.16);padding:5px;z-index:60}
+.menu.open .dropdown{display:block}
+.dropdown>button{width:100%;justify-content:flex-start;height:30px;padding:0 9px;border-color:transparent;font-size:13px}
+.dropdown>button:hover{background:var(--accbg)}
+.dropdown .sep{height:1px;background:var(--line);margin:5px 4px}
+.dropdown .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:3px 9px;font-size:12px;color:var(--mut)}
+.dropdown .row select,.dropdown .row input{height:26px;font-size:12px;width:112px;padding:0 5px}
+.dropdown .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);padding:6px 9px 3px;font-weight:600}
+.mgrid{display:grid;gap:3px;padding:3px}
+.mgrid.c2{grid-template-columns:repeat(2,1fr)}
+.mgrid.c3{grid-template-columns:repeat(3,1fr)}
+.mgrid.c4{grid-template-columns:repeat(4,1fr)}
+.mgrid button{width:auto;height:29px;padding:0 6px;font-size:12.5px;justify-content:center}
 @media print{
 .bar,#lib{display:none}body{background:#fff}#desk{padding:0;gap:0;display:block}
 .page{zoom:1!important;box-shadow:none;break-after:page;page-break-after:always}
@@ -72,6 +90,7 @@ svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.6;fill:none}
 </style></head><body>
 <div class="bar" id="bar">
  <div class="g"><select id="dsel" title="Documents"></select><input id="dname" title="Document name" aria-label="Document name"></div>
+ <nav id="menubar" aria-label="Editor menu"></nav>
  <span id="st"></span>
 </div>
 <aside id="lib"><button class="t" id="lc">Close</button><p class="mut" style="margin-top:8px">Upload once, then click to use. Headers, footers and letterheads apply to the whole document. Signatures and stamps go on the current page. <i class="tb-i" data-help="'Clear white' makes white pixels of a signature transparent so it blends over a letterhead. 'Repeat on all pages' clones the selected signature or stamp onto every page of the document.">i</i></p><div id="libc"></div></aside>
@@ -85,18 +104,38 @@ let cur=null,sel=null,scale=1,job=null,timer,D={h:'',f:'',bg:'',hm:'text',fm:'te
 try{store=JSON.parse(localStorage.getItem('ss2'))||store}catch(e){}
 try{lib=JSON.parse(localStorage.getItem('ss2lib'))||[]}catch(e){}
 
-/* ---------- toolbar ---------- */
-const bar=$('#bar');
-const grp=()=>{const g=document.createElement('div');g.className='g';bar.insertBefore(g,$('#st'));return g};
-function btn(g,h,t,f,c){const b=document.createElement('button');b.innerHTML=h;b.title=t;if(c)b.className=c;b.onmousedown=e=>e.preventDefault();b.onclick=f;g.append(b);return b}
+/* ---------- menubar ---------- */
+const bar=$('#bar'),mb=$('#menubar');
+const openLib=()=>$('#lib').classList.add('open');
+function closeMenus(){$$('.menu.open').forEach(m=>m.classList.remove('open'))}
+function menu(label){
+ const w=document.createElement('div');w.className='menu';
+ const b=document.createElement('button');b.type='button';b.textContent=label;
+ b.onmousedown=e=>e.preventDefault();
+ b.onclick=e=>{e.stopPropagation();const was=w.classList.contains('open');closeMenus();if(!was){w.classList.add('open');keepInside(w)}};
+ const d=document.createElement('div');d.className='dropdown';
+ w.append(b,d);mb.append(w);return d}
+/* keep a dropdown inside the viewport on narrow screens */
+function keepInside(w){const d=w.querySelector('.dropdown');d.style.left='0';d.style.right='auto';
+ const r=d.getBoundingClientRect();if(r.right>innerWidth-8){d.style.left='auto';d.style.right='0'}}
+document.addEventListener('click',e=>{if(!e.target.closest('.menu'))closeMenus()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenus()});
+
+/* fn may return true to keep the menu open (used by the two-step delete) */
+function item(d,html,title,fn){const b=document.createElement('button');b.type='button';b.innerHTML=html;b.title=title||'';
+ b.onmousedown=e=>e.preventDefault();
+ b.onclick=e=>{e.stopPropagation();const keep=fn();if(!keep)closeMenus()};d.append(b);return b}
+const sep=d=>d.appendChild(Object.assign(document.createElement('div'),{className:'sep'}));
+const grid=(d,cols)=>{const g=document.createElement('div');g.className='mgrid c'+cols;d.append(g);return g};
+const lbl=(d,t)=>{const s=document.createElement('div');s.className='lbl';s.textContent=t;d.append(s);return s};
+const row=(d,html)=>{const r=document.createElement('div');r.className='row';r.innerHTML=html;r.onmousedown=e=>e.stopPropagation();d.append(r);return r};
+
+const cmds=[['bold','<b>B</b>','Bold'],['italic','<i>I</i>','Italic'],['underline','<u>U</u>','Underline'],0,
+ ['formatBlock','H1','Title','h1'],['formatBlock','H2','Heading','h2'],['formatBlock','¶','Body text','p'],0,
+ ['justifyLeft','','Align left'],['justifyCenter','','Center'],['justifyRight','','Align right'],['justifyFull','','Justify'],0,
+ ['insertUnorderedList','• List','Bulleted list'],['insertOrderedList','1. List','Numbered list'],0,['undo','↶','Undo'],['redo','↷','Redo']];
 const ic=a=>{const w={l:[14,9,14,7],c:[14,8,12,6],r:[14,9,14,7],j:[14,14,14,14]}[a],x=i=>a==='c'?(16-w[i])/2:a==='r'?16-w[i]-2:2;
  return '<svg viewBox="0 0 16 16">'+w.map((v,i)=>`<path d="M${x(i)} ${3+i*3.3}h${v}"/>`).join('')+'</svg>'};
-const tools=[['bold','<b>B</b>','Bold'],['italic','<i>I</i>','Italic'],['underline','<u>U</u>','Underline'],0,
-['formatBlock','H1','Title','h1'],['formatBlock','H2','Heading','h2'],['formatBlock','¶','Body text','p'],0,
-['justifyLeft',ic('l'),'Align left'],['justifyCenter',ic('c'),'Center'],['justifyRight',ic('r'),'Align right'],['justifyFull',ic('j'),'Justify'],0,
-['insertUnorderedList','&bull;&nbsp;List','Bulleted list'],['insertOrderedList','1.&nbsp;List','Numbered list'],0,['undo','&#8630;','Undo'],['redo','&#8631;','Redo']];
-let g=grp();
-tools.forEach(t=>{if(!t){g=grp();return}btn(g,t[1],t[2],()=>{document.execCommand(t[0],false,t[3]||null);flow();save()})});
 function ins(h){const b=(cur||$('.page')).querySelector('.body'),s=getSelection();
  if(!s.anchorNode||!b.contains(s.anchorNode)){b.focus();const r=document.createRange();r.selectNodeContents(b);r.collapse(false);s.removeAllRanges();s.addRange(r)}
  document.execCommand('insertHTML',false,h);flow();save()}
@@ -109,28 +148,67 @@ function tbl(op){const c=cell();if(!c){st('Click inside a table cell first');ret
  if(op==='c-'){tr.cells.length>1?[...t.rows].forEach(r=>r.cells[ci]&&r.cells[ci].remove()):t.remove()}
  flow();save()}
 const cellHTML='<td><br></td>',sigC='<b>For ______________________</b><br><br><br><br>______________________<br>Name:<br>Designation:<br>Date:';
-g=grp();
-btn(g,'Table','Insert 3 x 3 table',()=>ins('<table><tbody>'+('<tr>'+cellHTML.repeat(3)+'</tr>').repeat(3)+'</tbody></table><p><br></p>'),'t');
-[['+Row','r+'],['+Col','c+'],['−Row','r-'],['−Col','c-']].forEach(a=>btn(g,a[0],'Table: '+a[0],()=>tbl(a[1])));
-btn(g,'Signature block','Insert a two-party signature block',()=>ins(`<table class="nb"><tbody><tr><td>${sigC}</td><td>${sigC}</td></tr></tbody></table><p><br></p>`),'t');
-g=grp();
 const up=k=>{job=k;$('#file').value='';$('#file').click()};
-g.innerHTML='<label>Header <select id="sh"><option value="text">Text</option><option value="image">Image</option><option value="none">None</option></select></label><label>Footer <select id="sf"><option value="text">Text</option><option value="image">Image</option><option value="none">None</option></select></label><label>Letterhead background <select id="sb"><option value="none">None</option><option value="image">Full-page image</option></select></label>';
-const openLib=()=>$('#lib').classList.add('open');
+const repeatOnAll=()=>{if(!sel){st('Click a signature or stamp on the page first');return}
+ sel.dataset.rep?delete sel.dataset.rep:sel.dataset.rep='1';renum();st(sel.dataset.rep?'Repeats on all pages':'Repeat turned off');save()};
+
+/* ── File ── */
+const dFile=menu('File');
+item(dFile,'New document','New blank document',()=>newDoc());
+item(dFile,'Duplicate document','Duplicate this document',()=>{const c=JSON.parse(JSON.stringify(ser()));c.name+=' copy';newDoc(c)});
+let arm=0;
+const delB=item(dFile,'Delete document','Delete this document',()=>{
+ if(!arm){arm=1;delB.textContent='Click again to delete';setTimeout(()=>{arm=0;delB.textContent='Delete document'},3000);return true}
+ arm=0;delB.textContent='Delete document';delete store.docs[store.cur];const ids=Object.keys(store.docs);
+ ids.length?loadDoc(ids[0]):newDoc();persist()});
+sep(dFile);
+item(dFile,'Save as PDF','Print, then choose Save as PDF',()=>{pick(null);try{window.print()}catch(e){st('Use your browser menu: Print, then Save as PDF')}});
+
+/* ── Format ── */
+const dFmt=menu('Format');
+const jm={justifyLeft:'l',justifyCenter:'c',justifyRight:'r',justifyFull:'j'};
+const fgrids=[3,4,2,2];let fi=-1,fgrid=null;
+cmds.forEach(c=>{
+ if(!c){fi++;fgrid=grid(dFmt,fgrids[fi]);return}
+ if(!fgrid)fgrid=grid(dFmt,3);
+ const b=document.createElement('button');b.type='button';
+ b.innerHTML=jm[c[0]]?ic(jm[c[0]]):c[1];
+ b.title=c[2];b.onmousedown=e=>e.preventDefault();
+ b.onclick=e=>{e.stopPropagation();document.execCommand(c[0],false,c[3]||null);flow();save()};
+ fgrid.append(b)});
+
+/* ── Insert ── */
+const dIns=menu('Insert');
+item(dIns,'Table','Insert a 3 × 3 table',()=>ins('<table><tbody>'+('<tr>'+cellHTML.repeat(3)+'</tr>').repeat(3)+'</tbody></table><p><br></p>'));
+const tg=grid(dIns,4);
+[['+ Row','r+'],['+ Col','c+'],['− Row','r-'],['− Col','c-']].forEach(a=>{
+ const b=document.createElement('button');b.type='button';b.textContent=a[0];b.title='Table: '+a[0];
+ b.onmousedown=e=>e.preventDefault();b.onclick=e=>{e.stopPropagation();tbl(a[1])};tg.append(b)});
+sep(dIns);
+item(dIns,'Signature block','Insert a two-party signature block',()=>ins(`<table class="nb"><tbody><tr><td>${sigC}</td><td>${sigC}</td></tr></tbody></table><p><br></p>`));
+
+/* ── Page ── */
+const dPg=menu('Page');
+item(dPg,'Add page','Add a page that starts here',()=>{cur=mkPage({});cur.scrollIntoView({behavior:'smooth',block:'start'});save()});
+item(dPg,'Remove page','Remove current page',()=>{const ps=$$('.page');if(ps.length<2)return;(cur&&ps.includes(cur)?cur:ps[ps.length-1]).remove();cur=null;renum();save()});
+sep(dPg);lbl(dPg,'Page margins (mm)');
+row(dPg,'<span>Top</span><input id="mt" type="number" min="0" max="120" aria-label="Margin top">');
+row(dPg,'<span>Bottom</span><input id="mb" type="number" min="0" max="120" aria-label="Margin bottom">');
+['mt','mb'].forEach(k=>$('#'+k).oninput=e=>{D[k]=+e.target.value||0;$('#desk').style.setProperty('--'+k,D[k]+'mm');flow();save()});
+
+/* ── Images (separate menu, as requested) ── */
+const dImg=menu('Images');
+item(dImg,'Image library…','Headers, footers, letterheads, signatures and stamps',openLib);
+sep(dImg);lbl(dImg,'Letterhead & framing');
+row(dImg,'<span>Header</span><select id="sh"><option value="text">Text</option><option value="image">Image</option><option value="none">None</option></select>');
+row(dImg,'<span>Footer</span><select id="sf"><option value="text">Text</option><option value="image">Image</option><option value="none">None</option></select>');
+row(dImg,'<span>Background</span><select id="sb"><option value="none">None</option><option value="image">Full-page image</option></select>');
 [['sh','hm','h'],['sf','fm','f']].forEach(([id,m,i])=>$('#'+id).onchange=e=>{D[m]=e.target.value;if(D[m]==='image'&&!D[i])openLib();applyMode();flow();save()});
 $('#sb').onchange=e=>{if(e.target.value==='none'&&D.bg){D.bg='';D.mt=12;D.mb=10}else if(e.target.value==='image'&&!D.bg)openLib();applyMode();flow();save()};
-btn(g,'Image library','Headers, footers, letterheads, signatures and stamps',openLib,'t');
-btn(g,'Clear white','Make the white of the selected image transparent',clean,'t');
-btn(g,'Repeat on all pages','Repeat the selected stamp or signature on every page',()=>{if(!sel){st('Click a signature or stamp on the page first');return}
- sel.dataset.rep?delete sel.dataset.rep:sel.dataset.rep='1';renum();st(sel.dataset.rep?'Repeats on all pages':'Repeat turned off');save()},'t');
-g=grp();
-btn(g,'Add page','Add a page that starts here',()=>{cur=mkPage({});cur.scrollIntoView({behavior:'smooth',block:'start'});save()},'t');
-btn(g,'Remove page','Remove current page',()=>{const ps=$$('.page');if(ps.length<2)return;(cur&&ps.includes(cur)?cur:ps[ps.length-1]).remove();cur=null;renum();save()},'t');
-g=grp();
-g.innerHTML='<label>Margin top <input id="mt" type="number" min="0" max="120"></label><label>bottom <input id="mb" type="number" min="0" max="120"></label>';
-['mt','mb'].forEach(k=>$('#'+k).oninput=e=>{D[k]=+e.target.value||0;$('#desk').style.setProperty('--'+k,D[k]+'mm');flow();save()});
-g=grp();g.style.border=0;
-btn(g,'Save as PDF','Print, then choose Save as PDF',()=>{pick(null);try{window.print()}catch(e){st('Use your browser menu: Print, then Save as PDF')}},'p');
+sep(dImg);lbl(dImg,'Placed signatures & stamps');
+item(dImg,'Clear white','Make the white of the selected image transparent',clean);
+item(dImg,'Repeat on all pages','Repeat the selected stamp or signature on every page',repeatOnAll);
+
 $('#lc').onclick=()=>$('#lib').classList.remove('open');
 
 /* ---------- pages ---------- */
@@ -222,12 +300,6 @@ function loadDoc(id){store.cur=id;const d=store.docs[id];D={h:d.mode?'':d.h||'',
 function newDoc(base){if(store.cur)commit();const id=Date.now().toString(36);store.docs[id]=base||{name:'Untitled document',pages:[{}],mt:12,mb:10,hm:'text',fm:'text'};loadDoc(id);persist()}
 $('#dsel').onchange=e=>{commit();loadDoc(e.target.value);persist()};
 $('#dname').oninput=e=>{$('#dsel').selectedOptions[0].textContent=e.target.value;save()};
-g=$('#dsel').parentNode;
-btn(g,'New','New blank document',()=>newDoc(),'t');
-btn(g,'Copy','Duplicate this document',()=>{const c=JSON.parse(JSON.stringify(ser()));c.name+=' copy';newDoc(c)},'t');
-let arm=0;
-btn(g,'Delete','Delete this document',e=>{const b=e.currentTarget;if(!arm){arm=1;b.textContent='Sure?';setTimeout(()=>{arm=0;b.textContent='Delete'},3000);return}
- arm=0;b.textContent='Delete';delete store.docs[store.cur];const ids=Object.keys(store.docs);ids.length?loadDoc(ids[0]):newDoc();persist()},'t');
 
 document.execCommand('defaultParagraphSeparator',false,'p');
 renderLib();

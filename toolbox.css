@@ -99,6 +99,7 @@ body.has-tbbar { padding-top: 40px !important; }
 body.has-tbbar #sidebar { top: 40px !important; height: calc(100vh - 40px) !important; }  /* Litigation Tracker */
 body.has-tbbar .bar { top: 40px !important; }   /* e-Signer sticky toolbar */
 body.has-tbbar #hdr { top: 40px !important; }   /* Fixed Asset Manager sticky header */
+body.has-tbbar #lib { top: 40px !important; }   /* e-Signer image library panel */
 
 /* ── Print: chrome and help never appear on paper ── */
 @media print {
@@ -106,4 +107,5 @@ body.has-tbbar #hdr { top: 40px !important; }   /* Fixed Asset Manager sticky he
   body.has-tbbar { padding-top: 0 !important; }
   body.has-tbbar #sidebar { top: 0 !important; height: 100vh !important; }
   body.has-tbbar .bar, body.has-tbbar #hdr { top: 0 !important; }
+  body.has-tbbar #lib { top: 0 !important; }
 }
