@@ -196,10 +196,10 @@ row(dPg,'<span>Top</span><input id="mt" type="number" min="0" max="120" aria-lab
 row(dPg,'<span>Bottom</span><input id="mb" type="number" min="0" max="120" aria-label="Margin bottom">');
 ['mt','mb'].forEach(k=>$('#'+k).oninput=e=>{D[k]=+e.target.value||0;$('#desk').style.setProperty('--'+k,D[k]+'mm');flow();save()});
 
-/* ── Images (separate menu, as requested) ── */
-const dImg=menu('Images');
+/* ── Letterhead (images, framing and placed signatures) ── */
+const dImg=menu('Letterhead');
 item(dImg,'Image library…','Headers, footers, letterheads, signatures and stamps',openLib);
-sep(dImg);lbl(dImg,'Letterhead & framing');
+sep(dImg);lbl(dImg,'Header, footer & background');
 row(dImg,'<span>Header</span><select id="sh"><option value="text">Text</option><option value="image">Image</option><option value="none">None</option></select>');
 row(dImg,'<span>Footer</span><select id="sf"><option value="text">Text</option><option value="image">Image</option><option value="none">None</option></select>');
 row(dImg,'<span>Background</span><select id="sb"><option value="none">None</option><option value="image">Full-page image</option></select>');
