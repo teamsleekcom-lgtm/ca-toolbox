@@ -9,6 +9,7 @@ This is the working agreement for every session. Read it first, then `README.md`
 ## Read first
 
 - [`README.md`](README.md) — the operational guide: layout, hosting, submissions, how to add or update a tool.
+- [`docs/handoff.md`](docs/handoff.md) — the working memory between sessions: current task, settled facts, next outcome. Read it at session start; rewrite it at session end.
 - [`data/tools.json`](data/tools.json) — the "database" of listed tools (the site reads it).
 - [`index.html`](index.html) — the public directory page.
 - [`reviewflags.md`](reviewflags.md) — findings from Bholu's reviews (read before changing code).
