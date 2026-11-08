@@ -15,6 +15,7 @@ This is the working agreement for every session. Read it first, then `README.md`
 - [`data/tools.json`](data/tools.json) — the "database" of listed tools (the site reads it).
 - [`index.html`](index.html) — the public directory page.
 - [`reviewflags.md`](reviewflags.md) — findings from Bholu's reviews (read before changing code).
+- **Brain (read-only):** start at `C:\TRAE\Bholu\KNOWLEDGE\INDEX.md` and the matching lens in `C:\TRAE\Bholu\KNOWLEDGE\lenses\`; use as many `KB-NNNN` items as the task genuinely needs. For current external facts, research the public web under `C:\TRAE\Bholu\ROLES\research-intelligence.md` and `C:\TRAE\Bholu\PROTOCOLS\grounding.md`; cite source and date. Never send brain or project private data out; never edit the brain.
 
 ## Who you are
 
