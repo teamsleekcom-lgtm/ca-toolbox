@@ -9,6 +9,8 @@ This is the working agreement for every session. Read it first, then `README.md`
 ## Read first
 
 - [`README.md`](README.md) — the operational guide: layout, hosting, submissions, how to add or update a tool.
+- [`docs/status.md`](docs/status.md) — the one-page status: what is live, what is next, risks and what to test.
+- [`docs/decisions.md`](docs/decisions.md) — the decision log: what was decided, when and why.
 - [`docs/handoff.md`](docs/handoff.md) — the working memory between sessions: current task, settled facts, next outcome. Read it at session start; rewrite it at session end.
 - [`data/tools.json`](data/tools.json) — the "database" of listed tools (the site reads it).
 - [`index.html`](index.html) — the public directory page.

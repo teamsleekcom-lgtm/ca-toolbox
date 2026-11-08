@@ -29,6 +29,16 @@ Do not start a feature until the operator names the next outcome.
 - Which outcome: more tools, more distribution, or an easier submission path?
 - Is LinkedIn Page messaging enabled and monitored? It is the only intake; if not, the submission path is closed.
 
+## Verification status
+
+- Live at **catoolbox.in**; **11 hosted tools**; GitHub Pages; no accounts or backend.
+- The submission path is a **LinkedIn Page direct message**.
+
+## Leftovers
+
+- Email fallback for submissions (T-030).
+- Usage measurement; the next outcome waits on Pollu.
+
 ## Do not repeat
 
 - Do not add accounts, a backend or paid tiers; the promise is free, no sign-in.
