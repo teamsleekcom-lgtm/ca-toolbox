@@ -10,6 +10,12 @@ Portfolio judgment recorded on 2026-11-02: the binding constraint is **supply an
 
 Do not start a feature until the operator names the next outcome.
 
+## Knowledge used
+
+- Task: <the next session writes this line>
+- Knowledge used: <the next session fills this>
+- Lesson: <"added to docs/knowledge-log.md" or "none — nothing reusable">
+
 ## Settled facts (do not re-research)
 
 - Live at **https://catoolbox.in** (also https://teamsleekcom-lgtm.github.io/ca-toolbox/). Static GitHub Pages served from the repository root; no server, no accounts, no database.

@@ -15,7 +15,22 @@ This is the working agreement for every session. Read it first, then `README.md`
 - [`data/tools.json`](data/tools.json) — the "database" of listed tools (the site reads it).
 - [`index.html`](index.html) — the public directory page.
 - [`reviewflags.md`](reviewflags.md) — findings from Bholu's reviews (read before changing code).
-- **Brain (read-only):** start at `C:\TRAE\Bholu\KNOWLEDGE\INDEX.md` and the matching lens in `C:\TRAE\Bholu\KNOWLEDGE\lenses\`; use as many `KB-NNNN` items as the task genuinely needs. For current external facts, research the public web under `C:\TRAE\Bholu\ROLES\research-intelligence.md` and `C:\TRAE\Bholu\PROTOCOLS\grounding.md`; cite source and date. Never send brain or project private data out; never edit the brain.
+
+## Knowledge base (read-only)
+
+The shared knowledge base is at `C:\TRAE\Bholu\KNOWLEDGE\`. It is read-only: never edit it.
+
+- **Before a task that needs outside knowledge**, add this session's task line to the handoff under `## Knowledge used`: `Task: <what you are about to do>`. Then read `C:\TRAE\Bholu\KNOWLEDGE\ventures\v5.md`. It lists the ten items that matter now, the gaps and the reading lists.
+- **Search by the task, not the topic.** Run `python C:\TRAE\Bholu\tools\kb.py route --text "<the words of your task>"`. If no route matches, run `python C:\TRAE\Bholu\tools\kb.py find --venture v5 --text "<the words of your task>"`. Open only the items that apply with `python C:\TRAE\Bholu\tools\kb.py show KB-NNNN`.
+- **Department view:** the task routes name the owning department and sub-department. If the task is departmental, run `python C:\TRAE\Bholu\tools\kb.py route --dept <code>`, for example `SM-DM`.
+- **Say what you used in the handoff, not only in chat.** Fill `Knowledge used:` in the same section with the item ids and a plain-words line, or `none — no item on <topic>`. Put the item number on one short line at the end, not inside the sentence.
+- **The section has three lines:** `Task:`, `Knowledge used:` and `Lesson:`. A chat answer alone does not count.
+- **State rule:** `ready` means the idea is extracted and labelled. `time-sensitive` means check the date before relying on it. `out-of-date` means do not use it. There is no checking backlog; check the original only when the task depends on a changing fact.
+- **Project documents win on project facts.** The knowledge base informs practice. If they disagree, follow the project documents and note it in `reviewflags.md`.
+- **Return a lesson.** At session end, write `Lesson: added to docs/knowledge-log.md` or `Lesson: none — nothing reusable` in the same section. If the session produced a reusable fact, a tool test, or a pitfall, add three to six lines to `docs/knowledge-log.md`. No secrets, customer data, or long quotes.
+- **Privacy:** never send knowledge-base or project private data to an external service.
+
+**Focus for this project:** tool-page states, search visibility, submissions without a backend, and the CA audience.
 
 ## Who you are
 
