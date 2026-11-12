@@ -13,14 +13,16 @@ Visit: **https://catoolbox.in** (also served at https://teamsleekcom-lgtm.github
 
 ## 📤 How to Submit a Tool
 
-1. Visit the website
-2. Click "Submit a Tool" — it opens a **direct message to our LinkedIn Page** (`messaging/thread/new/?recipient=116474011`)
-3. Message us the tool details and link
-4. We review and add it to `data/tools.json`
+There are two routes, and both reach the same person:
 
-> To switch submissions to **email**, set `SUBMIT_EMAIL` at the top of the `<script>` block in `index.html` — every Submit link then becomes a pre-filled `mailto:` instead. Leave it `''` to keep the LinkedIn DM.
+1. **Email — the main route.** Click "Submit a Tool". It opens the visitor's mail app, already addressed to **admin@catoolbox.in** with a pre-filled subject and a short template (tool name, link, description, creator). They add their details and send.
+2. **LinkedIn.** The smaller "or message us on LinkedIn" link under the button opens our Page; the visitor uses the Page's Message button.
 
-> Note: the DM link only works for visitors signed in to LinkedIn (logged-out users get LinkedIn's login screen first, then continue to the message). It also requires **Page messaging to be enabled** in the Page's admin settings.
+Either way, we review the tool and add it to `data/tools.json`.
+
+> **Changing the address:** edit `SUBMIT_EMAIL` at the top of the `<script>` block in `index.html`. One constant feeds the header button, the empty-state link and the footer address, so there is nothing else to change. Setting it to `''` falls back to LinkedIn only.
+
+> **Why the LinkedIn link goes to the Page, not a direct message:** the `messaging/thread/new/?recipient=…` deep link was reported as unreliable in real use, so we do not present it as the main path. `LINKEDIN_DM_URL` is still defined in the script for reference.
 
 ## 🧰 Tools hosted on this site
 
@@ -99,7 +101,7 @@ CAToolbox/
 ## 📦 Adding Tools (Admin Guide)
 
 ### Workflow: Delegated Submissions
-1.  **Users** submit tools via the "Submit a Tool" button (LinkedIn).
+1.  **Users** submit tools via the "Submit a Tool" button (email to admin@catoolbox.in, or LinkedIn).
 2.  **You (Admin)** review the submission.
 3.  **To Add a Tool:** update `data/tools.json` (manually, on GitHub, or via your developer) and commit.
 
