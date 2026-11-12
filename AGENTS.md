@@ -16,6 +16,40 @@ This is the working agreement for every session. Read it first, then `README.md`
 - [`index.html`](index.html) — the public directory page.
 - [`reviewflags.md`](reviewflags.md) — findings from Bholu's reviews (read before changing code).
 
+## Plain English and references (binding)
+
+Every reply, report, summary, question and next-step box is for a human reader. Use simple, plain English that a non-native reader understands at first read. Never use AI-agent or engineering slang. Explain a technical term in plain words the first time.
+
+| Do not write | Write instead |
+| --- | --- |
+| load-bearing | important, needed |
+| cutover | switch, move |
+| surface (as a verb) | show, raise |
+| land, ship | merge, release |
+| gate, gated | check, needs approval first |
+| park | pause, stop |
+| plumbing | connecting code |
+| wire up | connect |
+| blast radius | what it affects |
+| footgun | easy mistake |
+| nit | small point |
+| punt | postpone |
+| de-risk | make safer |
+| sanity check | quick check |
+| spin up | start |
+| fan out | send to several |
+| happy path | normal case |
+| thread through | pass along |
+| first-class | fully supported |
+| orthogonal | unrelated |
+| bespoke | custom |
+| net-new | new |
+| TL;DR | summary |
+
+Messages between agents (prompts, briefs, agent-to-agent notes) are exempt. Reread every reply before sending and replace any such word.
+
+**No bare references.** Never answer with bare feature numbers, task IDs, decision IDs, file names or ticket codes inside a sentence. Say what each one is in plain words; the number or file may follow in brackets. If a source must be named, put it on one short line at the end. This applies to every reply, report and next-step box.
+
 ## Knowledge base (read-only)
 
 The shared knowledge base is at `C:\TRAE\Bholu\KNOWLEDGE\`. It is read-only: never edit it.
